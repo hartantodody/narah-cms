@@ -1,122 +1,63 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <main className="relative min-h-screen overflow-hidden bg-background px-6 py-10 text-foreground">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(15,23,42,0.09),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(120,113,108,0.16),transparent_28%)]" />
+      <div className="relative mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-5xl items-center justify-center">
+        <Card className="w-full border border-border/70 bg-card/95 py-0 shadow-2xl shadow-black/5 backdrop-blur">
+          <div className="grid gap-0 md:grid-cols-[1.2fr_0.8fr]">
+            <div className="border-b border-border/70 p-8 md:border-r md:border-b-0 md:p-10">
+              <CardHeader className="px-0">
+                <Badge variant="outline" className="mb-4">
+                  Foundation Phase
+                </Badge>
+                <CardTitle className="text-3xl font-semibold tracking-tight md:text-4xl">
+                  Narah CMS Admin
+                </CardTitle>
+                <CardDescription className="max-w-xl text-sm leading-6 md:text-base">
+                  Schema-driven content management system
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="px-0 pt-4 text-sm leading-6 text-muted-foreground">
+                This workspace is ready for the first implementation pass. The
+                admin shell stays intentionally minimal while we lock down the
+                platform foundations for multi-site content management.
+              </CardContent>
+            </div>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+            <div className="space-y-4 p-8 md:p-10">
+              <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+                <p className="text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
+                  Initial Focus
+                </p>
+                <p className="mt-3 text-sm leading-6">
+                  Monorepo stability, API structure, shared conventions, and
+                  blueprint planning before feature modules arrive.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-dashed border-border/70 p-4">
+                <p className="text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
+                  Next Up
+                </p>
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                  Authentication, site management, and schema tooling will be
+                  added in later phases.
+                </p>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+    </main>
+  );
 }
 
-export default App
+export default App;
