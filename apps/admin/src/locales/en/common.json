@@ -1,0 +1,434 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "loading": "Loading…",
+    "saving": "Saving…",
+    "creating": "Creating…",
+    "deleting": "Deleting…",
+    "done": "Done",
+    "copy": "Copy",
+    "copied": "Copied",
+    "never": "Never",
+    "yes": "Yes",
+    "no": "No",
+    "optional": "(optional)",
+    "comingSoon": "soon",
+    "tryAgain": "Try again",
+    "search": "Search",
+    "actions": "Actions"
+  },
+  "locale": {
+    "switcher": {
+      "label": "Language",
+      "tooltip": "Change language"
+    }
+  },
+  "topbar": {
+    "adminWorkspace": "admin workspace",
+    "profile": "Profile",
+    "signOut": "Sign out"
+  },
+  "apiKeys": {
+    "section": {
+      "title": "API keys",
+      "description": "Used by websites + apps to read this site's published content via the public delivery API (<code>/public/v1/*</code>).",
+      "newKey": "New key",
+      "readOnlyTitle": "Read-only",
+      "readOnlyDescription": "Only OWNER and ADMIN members can issue or revoke API keys.",
+      "errorTitle": "Something went wrong",
+      "errorFallback": "Unable to load API keys.",
+      "loadErrorFallback": "Unable to load API keys.",
+      "createErrorFallback": "Unable to create API key.",
+      "updateErrorFallback": "Unable to update API key.",
+      "revokeErrorFallback": "Unable to revoke API key.",
+      "noKeys": "No API keys yet.",
+      "byUser": "by {{name}}",
+      "createdBy": "Super admin"
+    },
+    "status": {
+      "active": "Active",
+      "revoked": "Revoked",
+      "expired": "Expired",
+      "preview": "Preview",
+      "previewTooltip": "This key can read DRAFT entries via ?preview=1"
+    },
+    "table": {
+      "name": "Name",
+      "status": "Status",
+      "prefix": "Prefix",
+      "origins": "Origins",
+      "rate": "Rate",
+      "lastUsed": "Last used",
+      "expires": "Expires",
+      "actions": "Actions",
+      "anyOrigin": "any",
+      "originsCount_one": "{{count}} origin",
+      "originsCount_other": "{{count}} origins",
+      "ratePerMinute": "{{count}}/min",
+      "neverUsed": "Never",
+      "neverExpires": "Never",
+      "editAria": "Edit key",
+      "deleteAria": "Delete key",
+      "revoke": "Revoke"
+    },
+    "create": {
+      "title": "Create API key",
+      "description": "Give this key a memorable name. You can copy the secret once on the next screen.",
+      "nameLabel": "Name",
+      "namePlaceholder": "Production website",
+      "expiresLabel": "Expires",
+      "rateLimitLabel": "Rate limit (req/min)",
+      "originsLabel": "Allowed origins",
+      "originsPlaceholder": "https://yoursite.com\nhttps://staging.yoursite.com",
+      "originsHint": "One per line. Leave empty to allow any origin (server-to-server consumers always work).",
+      "allowDraftLabel": "Allow draft preview",
+      "allowDraftHint": "Lets the consumer pass <code>?preview=1</code> to receive DRAFT entries in addition to PUBLISHED. Only enable for preview/staging deployments — never for a key embedded in a cacheable public production site.",
+      "submit": "Create key",
+      "submitting": "Creating…"
+    },
+    "edit": {
+      "title": "Edit \"{{name}}\"",
+      "description": "Update name, origin allowlist, and rate limit. The key secret itself cannot be changed — revoke + create a new one to rotate.",
+      "originsHint": "One per line. Empty = any origin allowed.",
+      "allowDraftHint": "Lets the consumer pass <code>?preview=1</code> to receive DRAFT entries. Disable to revoke draft access without rotating the key.",
+      "submit": "Save",
+      "submitting": "Saving…"
+    },
+    "reveal": {
+      "title": "Your new API key",
+      "description": "Copy this now — we won't show it again. Treat it like a password.",
+      "scopesLine": "Scopes: {{scopes}}",
+      "expiresLine": " · Expires {{date}}",
+      "neverExpiresLine": " · Never expires",
+      "tryIt": "Try it:"
+    },
+    "revoke": {
+      "title": "Revoke \"{{name}}\"?",
+      "description": "The key will immediately stop working for any consumer. This is non-destructive — the key record stays for audit purposes. Use Delete to remove it entirely.",
+      "submit": "Revoke",
+      "submitting": "Revoking…"
+    },
+    "delete": {
+      "title": "Delete \"{{name}}\"?",
+      "description": "This permanently removes the key record. If the key is still active, any consumer using it will lose access. Cannot be undone.",
+      "submit": "Delete",
+      "submitting": "Deleting…"
+    }
+  },
+  "guides": {
+    "ga": {
+      "backToSettings": "Back to site settings",
+      "breadcrumb": "guide / google analytics",
+      "title": "Connect Google Analytics",
+      "lead": "Six steps to get visitor analytics flowing into your site overview. Takes ~10 minutes if it's your first time.",
+      "prereqTitle": "Before you start",
+      "prereq1": "You already have a GA4 property created in Google Analytics with the tracking tag installed on the live site.",
+      "prereq2": "You have access to the Google Cloud Console (the same Google account works for both).",
+      "prereq3": "You are an OWNER or ADMIN of the Narah site you want to connect.",
+      "step1": {
+        "title": "Grab your GA4 Property ID",
+        "description": "This is the numeric identifier GA Data API uses — different from the Measurement ID (G-XXXXX) that you put on the website.",
+        "b1": "Open Google Analytics and select your property.",
+        "b2": "Bottom-left → Admin (gear icon).",
+        "b3": "Under the Property column → Property Settings → Property details.",
+        "b4": "Copy the Property ID at the top of the card (9–10 digit number).",
+        "example": "Example",
+        "exampleNote": "yours will be different"
+      },
+      "step2": {
+        "title": "Create (or pick) a Google Cloud project",
+        "description": "The service account lives inside a Cloud project. Any project works — create a fresh one if you don't have a preference.",
+        "b1": "Open Google Cloud Console.",
+        "b2": "Click the project dropdown at the top → New Project (or pick an existing one).",
+        "b3": "Give it a name like \"narah-lsp-mice\" and create."
+      },
+      "step3": {
+        "title": "Enable the Analytics Data API",
+        "description": "This is the API the CMS will call to fetch reports.",
+        "b1": "In your Cloud project, open the link below.",
+        "b2": "Click Enable. Wait a few seconds.",
+        "b3": "If you see \"API enabled\", you're good.",
+        "link": "Open Analytics Data API"
+      },
+      "step4": {
+        "title": "Create a service account + key",
+        "description": "Service accounts let the CMS authenticate as a machine — no human OAuth required.",
+        "b1": "In Cloud Console → IAM & Admin → Service Accounts → + Create Service Account.",
+        "b2": "Name it (e.g. narah-cms-analytics). Skip the optional Grant access step → Continue → Done.",
+        "b3": "Click the new service account → Keys tab → Add Key → Create new key → JSON → Create.",
+        "b4": "A JSON file downloads. Keep it safe — anyone with this file can read your analytics.",
+        "warning": "Never commit the JSON to git or share publicly. We encrypt it at rest, but the file in your Downloads folder is plaintext."
+      },
+      "step5": {
+        "title": "Give the service account access to your GA property",
+        "description": "Skipping this step is the #1 reason reports fail. The service account can authenticate but cannot see any data until you add it to GA with Viewer role.",
+        "b1": "Open the downloaded JSON file in a text editor. Copy the full value of the client_email field.",
+        "b2": "Open Google Analytics → bottom-left Admin (gear icon) → Property column → Property access management.",
+        "b3": "Top-right blue + button → Add users → paste the service account email.",
+        "b4": "Role: Viewer (not Marketer / not Analyst). Uncheck \"Notify by email\" — service accounts can't receive email. Click Add.",
+        "emailFormat": "Service account email format",
+        "critical": "Required"
+      },
+      "step6": {
+        "title": "Paste everything into Narah",
+        "description": "Final stretch — back to the CMS.",
+        "b1": "Open Site settings → Google Analytics section.",
+        "b2": "Property ID: paste the number from step 1.",
+        "b3": "Service account JSON: open the file from step 4 and paste the full contents.",
+        "b4": "Click Connect. The site overview will start showing visitor data within a minute."
+      },
+      "doneTitle": "That's it",
+      "doneDescription": "Head back to settings to paste your credentials. If you just set up tracking today, GA may take 24–48 hours to aggregate the 30-day numbers — realtime works instantly.",
+      "openSettings": "Open Settings",
+      "troubleshootTitle": "Troubleshooting",
+      "t1": {
+        "symptom": "\"Permission denied\" or 403 after Connect",
+        "fix": "Service account email isn't added to the GA property yet. Repeat step 5 and confirm the role is Viewer (not Marketer/Analyst — those don't grant API read on all properties)."
+      },
+      "t2": {
+        "symptom": "\"Property not found\" or 404",
+        "fix": "Wrong Property ID. Double-check step 1 — make sure you copied the numeric ID from the Property Settings card, not the Measurement ID (G-XXXXX)."
+      },
+      "t3": {
+        "symptom": "Data shows zero everywhere",
+        "fix": "Either the site has no traffic yet, or GA hasn't aggregated data yet (24–48h for fresh tracking). Open GA directly to confirm data is flowing."
+      },
+      "t4": {
+        "symptom": "\"Service account must be valid JSON\"",
+        "fix": "You pasted something other than the JSON file contents. Open the downloaded file in a text editor and copy everything between { and } including the braces."
+      }
+    }
+  },
+  "analytics": {
+    "title": "Visitor analytics",
+    "range": "last {{days}} days",
+    "manage": "Manage",
+    "loading": "Loading…",
+    "errorLoad": "Couldn't load analytics.",
+    "noData": "No data for this range.",
+    "notConnectedTitle": "Google Analytics is not connected",
+    "notConnectedDescription": "Connect a GA4 property to surface visitor and content performance here.",
+    "connectCta": "Connect Google Analytics",
+    "reviewConfig": "Review configuration",
+    "metrics": {
+      "users": "Active users",
+      "pageViews": "Page views",
+      "sessions": "Sessions",
+      "bounceRate": "Bounce rate"
+    },
+    "topPages": "Top pages",
+    "trafficSources": "Traffic sources",
+    "trendTitle": "Active users trend",
+    "trendSubtitle": "{{users}} users · {{views}} page views over the period",
+    "settings": {
+      "title": "Google Analytics",
+      "description": "Connect a GA4 property using a service account so we can fetch reports on your behalf.",
+      "connected": "Connected",
+      "disconnected": "Not connected",
+      "errorTitle": "Something went wrong",
+      "successTitle": "Saved",
+      "propertyIdLabel": "GA4 property ID",
+      "propertyIdHint": "Numeric only. Find it in GA → Admin → Property Settings.",
+      "serviceAccountLabel": "Service account JSON",
+      "serviceAccountHint": "Paste the full JSON key downloaded from Google Cloud.",
+      "serviceAccountHintConnected": "Service account is stored. Paste a new one only if you need to rotate it.",
+      "saving": "Saving…",
+      "connect": "Connect",
+      "update": "Update",
+      "disconnect": "Disconnect",
+      "disconnecting": "Disconnecting…",
+      "errorSave": "Couldn't save analytics config.",
+      "errorDisconnect": "Couldn't disconnect analytics.",
+      "savedSuccess": "Google Analytics is connected. Reports will appear on the site overview.",
+      "openGuide": "Open full setup guide"
+    }
+  },
+  "content": {
+    "hub": {
+      "breadcrumb": "site / content",
+      "title": "Content",
+      "description": "Every content type defined for this site. Open one to view & edit its entries.",
+      "empty": "No content types yet",
+      "emptyHint": "Define your first schema under Configure → Schema.",
+      "singleton": "Singleton",
+      "collection": "Collection",
+      "entry_one": "{{count}} entry",
+      "entry_other": "{{count}} entries"
+    },
+    "entries": {
+      "backToContent": "Back to content",
+      "titleSuffix": "entries",
+      "viewApi": "View API",
+      "newEntry": "New entry",
+      "searchPlaceholder": "Search by slug…",
+      "status": {
+        "all": "All",
+        "draft": "Draft",
+        "published": "Published",
+        "archived": "Archived"
+      },
+      "columns": {
+        "slug": "Slug",
+        "status": "Status",
+        "updated": "Updated",
+        "updatedBy": "Updated by",
+        "actions": "Actions"
+      },
+      "empty": "No entries yet",
+      "emptyHint": "Click \"New entry\" to create the first one.",
+      "errorTitle": "Something went wrong"
+    },
+    "editor": {
+      "backToEntries": "Back to entries",
+      "editPrefix": "Edit",
+      "newPrefix": "New",
+      "saveDraft": "Save draft",
+      "saving": "Saving…",
+      "publish": "Publish",
+      "publishing": "Publishing…",
+      "unpublish": "Unpublish",
+      "deleteEntry": "Delete entry",
+      "detailsButton": "Slug & audit details",
+      "deleteConfirmTitle": "Delete this entry?",
+      "deleteConfirmDescription": "This permanently removes the entry. This action cannot be undone.",
+      "cantSaveTitle": "Couldn't save",
+      "slugLabel": "Slug",
+      "slugPlaceholder": "auto-generated-from-title",
+      "slugHint": "Leave empty to derive from a title-like field.",
+      "audit": "Audit",
+      "auditCreatedBy": "Created by",
+      "auditCreatedAt": "Created at",
+      "auditUpdatedBy": "Updated by",
+      "auditUpdatedAt": "Updated at",
+      "auditPublished": "Published",
+      "auditEmpty": "Save the draft to see audit info.",
+      "noFields": "This content type has no fields yet.",
+      "addFieldsHint": "Add fields in the schema builder.",
+      "askAdmin": "Ask a super admin to add fields.",
+      "viewerNotice": "Your role can view but not edit content. Ask an admin to upgrade your access.",
+      "revisions": {
+        "title": "Revisions",
+        "empty": "No revisions yet. We snapshot the previous state every time you save.",
+        "footer": "Last 10 saves are kept. Older revisions are pruned automatically.",
+        "view": "view",
+        "viewing": "viewing",
+        "by": "by",
+        "previewBannerTitle": "Viewing v{{version}}",
+        "previewBannerDescription": "Saved {{when}} by {{author}}. Form is read-only until you restore or close this version.",
+        "previewBannerCurrentTitle": "You are viewing the current version (v{{version}})",
+        "previewBannerCurrentDescription": "This is the entry as it stands right now — saved {{when}} by {{author}}. Nothing to restore. Close this view to keep editing.",
+        "previewBannerClose": "Back to current",
+        "previewBannerRestore": "Restore this version",
+        "previewTitle": "Revision v{{version}}",
+        "previewDescription": "Saved {{when}} by {{author}}. Compare snapshot (\"Then\") with current entry (\"Now\").",
+        "changed": "changed",
+        "then": "Then",
+        "now": "Now",
+        "close": "Close",
+        "restore": "Restore v{{version}}",
+        "restoring": "Restoring…",
+        "noFields": "This content type has no fields.",
+        "loading": "Loading revision…",
+        "errorLoad": "Couldn't load revisions.",
+        "errorRevision": "Couldn't load this revision.",
+        "errorRestore": "Couldn't restore this revision."
+      }
+    }
+  },
+  "schema": {
+    "page": {
+      "breadcrumb": "site / schema",
+      "title": "Schema",
+      "description": "Define reusable content types — fields, validation, relations — that power every entry in this site."
+    },
+    "contentTypes": {
+      "title": "Content Types",
+      "description": "Define reusable schemas for this site's content.",
+      "readOnly": "Read only",
+      "create": "Create content type",
+      "searchPlaceholder": "Search content types…",
+      "empty": "No content types yet",
+      "emptyHint": "Create your first schema to start modeling content for this site.",
+      "columns": {
+        "name": "Name",
+        "apiId": "API ID",
+        "mode": "Mode",
+        "description": "Description",
+        "fields": "Fields",
+        "entries": "Entries",
+        "updated": "Updated",
+        "actions": "Actions"
+      },
+      "mode": {
+        "singleton": "Singleton",
+        "collection": "Collection"
+      },
+      "actions": {
+        "open": "Open",
+        "edit": "Edit",
+        "delete": "Delete"
+      }
+    },
+    "builder": {
+      "back": "Back to site",
+      "badge": "Content Type Builder",
+      "viewEntries": "View entries",
+      "editType": "Edit content type",
+      "addField": "Add field",
+      "deleteType": "Delete content type",
+      "siteLabel": "Site",
+      "updatedLabel": "Updated",
+      "noDescription": "No schema description has been added yet.",
+      "tabs": {
+        "overview": "Overview",
+        "visual": "Visual builder",
+        "code": "Code (JSON)"
+      },
+      "overview": {
+        "summary": {
+          "title": "Schema summary",
+          "description": "Quick reference for this content model.",
+          "apiId": "API ID",
+          "mode": "Mode",
+          "fieldCount": "Field count",
+          "siteRole": "Site role"
+        },
+        "notes": {
+          "title": "Builder notes",
+          "description": "Reference the API explorer below before handing off.",
+          "body": "Establish field names, apiIds, and schema metadata first in the <strong>Visual builder</strong> tab. The API Explorer below auto-generates the response shape, the TypeScript type, and a cURL example for your frontend team."
+        },
+        "apiExplorer": {
+          "title": "API explorer",
+          "description": "How the public delivery API will return this content type."
+        }
+      },
+      "fields": {
+        "title": "Fields",
+        "description": "Define the reusable fields for this schema. Use the arrow controls to adjust ordering.",
+        "empty": "No fields defined yet.",
+        "emptyHint": "Start shaping this schema by adding the first field.",
+        "addField": "Add field",
+        "apiIdLabel": "API ID",
+        "orderLabel": "Order",
+        "updatedLabel": "Updated",
+        "noDescription": "No field description yet.",
+        "badges": {
+          "required": "Required",
+          "localized": "Localized",
+          "list": "List"
+        },
+        "actions": {
+          "up": "Up",
+          "down": "Down",
+          "edit": "Edit",
+          "delete": "Delete"
+        }
+      }
+    }
+  }
+}

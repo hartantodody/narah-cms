@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: narah-cms-postgres
+    restart: unless-stopped
+    ports:
+      - '5433:5432'
+    environment:
+      POSTGRES_USER: narah_user
+      POSTGRES_PASSWORD: narah_password
+      POSTGRES_DB: narah_cms
+    volumes:
+      - narah_postgres_data:/var/lib/postgresql/data
+volumes:
+  narah_postgres_data:

@@ -1,8 +1,11 @@
 import type { RequestHandler } from 'express'
+import type { ApiError } from '../lib/response'
 
 export const notFoundMiddleware: RequestHandler = (req, res) => {
-  res.status(404).json({
+  const payload: ApiError = {
+    success: false,
     message: 'Route not found',
-    path: req.originalUrl
-  })
+    code: 'ROUTE_NOT_FOUND'
+  }
+  res.status(404).json(payload)
 }

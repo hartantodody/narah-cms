@@ -1,0 +1,336 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+  engineType = "client"
+  runtime = "bun"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  DISABLED
+}
+
+enum UserTier {
+  FREE
+  PRO
+}
+
+enum SiteStatus {
+  ACTIVE
+  DISABLED
+  ARCHIVED
+}
+
+enum SiteRole {
+  OWNER
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
+enum ContentFieldType {
+  TEXT
+  RICH_TEXT
+  NUMBER
+  BOOLEAN
+  DATE
+  DATETIME
+  MEDIA
+  JSON
+  SELECT
+  MULTI_SELECT
+  RELATION
+}
+
+enum ContentEntryStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum PolicyDocumentType {
+  PRIVACY_POLICY
+  USER_AGREEMENT
+}
+
+model User {
+  id                  String             @id @default(uuid()) @db.Uuid
+  email               String             @unique
+  name                String
+  passwordHash        String             @map("password_hash")
+  status              UserStatus         @default(PENDING)
+  tier                UserTier           @default(FREE)
+  isSuperAdmin        Boolean            @default(false) @map("is_super_admin")
+  lastLoginAt         DateTime?          @map("last_login_at")
+  createdAt           DateTime           @default(now()) @map("created_at")
+  updatedAt           DateTime           @updatedAt @map("updated_at")
+  createdSites        Site[]             @relation("SiteCreatedBy")
+  siteMemberships     SiteMember[]
+  sentInvitations     SiteInvitation[]   @relation("SiteInvitationInvitedBy")
+  acceptedInvitations SiteInvitation[]   @relation("SiteInvitationAcceptedBy")
+  createdContentTypes ContentType[]      @relation("ContentTypeCreatedBy")
+  createdEntries      ContentEntry[]     @relation("ContentEntryCreatedBy")
+  updatedEntries      ContentEntry[]     @relation("ContentEntryUpdatedBy")
+  entryRevisions      ContentEntryRevision[] @relation("ContentEntryRevisionAuthor")
+  uploadedMediaAssets MediaAsset[]       @relation("MediaAssetUploadedBy")
+  createdApiKeys      ApiKey[]           @relation("ApiKeyCreatedBy")
+  policyAcceptances   PolicyAcceptance[]
+  auditLogs           AuditLog[]
+
+  @@map("users")
+}
+
+model Site {
+  id             String           @id @default(uuid()) @db.Uuid
+  name           String
+  slug           String           @unique
+  description    String?
+  status         SiteStatus       @default(ACTIVE)
+  createdById    String           @map("created_by_id") @db.Uuid
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+  createdBy      User             @relation("SiteCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  members        SiteMember[]
+  invitations    SiteInvitation[]
+  contentTypes   ContentType[]
+  contentEntries ContentEntry[]
+  mediaAssets    MediaAsset[]
+  apiKeys        ApiKey[]
+  auditLogs      AuditLog[]
+  analyticsConfig SiteAnalyticsConfig?
+
+  @@map("sites")
+}
+
+model SiteMember {
+  id        String   @id @default(uuid()) @db.Uuid
+  siteId    String   @map("site_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  role      SiteRole
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([siteId, userId])
+  @@map("site_members")
+}
+
+model SiteInvitation {
+  id           String           @id @default(uuid()) @db.Uuid
+  siteId       String           @map("site_id") @db.Uuid
+  email        String
+  role         SiteRole
+  tokenHash    String           @unique @map("token_hash")
+  status       InvitationStatus @default(PENDING)
+  invitedById  String           @map("invited_by_id") @db.Uuid
+  acceptedById String?          @map("accepted_by_id") @db.Uuid
+  expiresAt    DateTime         @map("expires_at")
+  acceptedAt   DateTime?        @map("accepted_at")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+  site         Site             @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  invitedBy    User             @relation("SiteInvitationInvitedBy", fields: [invitedById], references: [id], onDelete: Restrict)
+  acceptedBy   User?            @relation("SiteInvitationAcceptedBy", fields: [acceptedById], references: [id], onDelete: SetNull)
+
+  @@map("site_invitations")
+}
+
+model ContentType {
+  id          String         @id @default(uuid()) @db.Uuid
+  siteId      String         @map("site_id") @db.Uuid
+  name        String
+  apiId       String         @map("api_id")
+  description String?
+  isSingleton Boolean        @default(false) @map("is_singleton")
+  createdById String         @map("created_by_id") @db.Uuid
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  site        Site           @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  createdBy   User           @relation("ContentTypeCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  fields      ContentField[]
+  entries     ContentEntry[]
+
+  @@unique([siteId, apiId])
+  @@map("content_types")
+}
+
+model ContentField {
+  id            String           @id @default(uuid()) @db.Uuid
+  contentTypeId String           @map("content_type_id") @db.Uuid
+  label         String
+  apiId         String           @map("api_id")
+  type          ContentFieldType
+  description   String?
+  required      Boolean          @default(false)
+  localized     Boolean          @default(false)
+  isList        Boolean          @default(false) @map("is_list")
+  sortOrder     Int              @default(0) @map("sort_order")
+  config        Json?
+  validation    Json?
+  defaultValue  Json?            @map("default_value")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+  contentType   ContentType      @relation(fields: [contentTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([contentTypeId, apiId])
+  @@map("content_fields")
+}
+
+model ContentEntry {
+  id            String             @id @default(uuid()) @db.Uuid
+  siteId        String             @map("site_id") @db.Uuid
+  contentTypeId String             @map("content_type_id") @db.Uuid
+  slug          String?
+  status        ContentEntryStatus @default(DRAFT)
+  data          Json
+  version       Int                @default(1)
+  createdById   String             @map("created_by_id") @db.Uuid
+  updatedById   String             @map("updated_by_id") @db.Uuid
+  publishedAt   DateTime?          @map("published_at")
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+  site          Site               @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  contentType   ContentType        @relation(fields: [contentTypeId], references: [id], onDelete: Cascade)
+  createdBy     User               @relation("ContentEntryCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy     User               @relation("ContentEntryUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+  revisions     ContentEntryRevision[]
+
+  @@unique([contentTypeId, slug])
+  @@map("content_entries")
+}
+
+// Per-site Google Analytics 4 connection. Stores the GA4 property ID and an
+// AES-256-GCM encrypted service account JSON used to authenticate against the
+// GA Data API. One row per site (optional).
+model SiteAnalyticsConfig {
+  id                       String   @id @default(uuid()) @db.Uuid
+  siteId                   String   @unique @map("site_id") @db.Uuid
+  propertyId               String   @map("property_id")
+  serviceAccountCiphertext String   @map("service_account_ciphertext")
+  serviceAccountIv         String   @map("service_account_iv")
+  serviceAccountAuthTag    String   @map("service_account_auth_tag")
+  createdAt                DateTime @default(now()) @map("created_at")
+  updatedAt                DateTime @updatedAt @map("updated_at")
+  site                     Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@map("site_analytics_configs")
+}
+
+// Snapshot of ContentEntry data taken right BEFORE an update. We keep the
+// last 10 per entry (pruned on insert) so editors can roll back recent
+// mistakes without bloating storage.
+model ContentEntryRevision {
+  id        String             @id @default(uuid()) @db.Uuid
+  entryId   String             @map("entry_id") @db.Uuid
+  version   Int
+  status    ContentEntryStatus
+  data      Json
+  authorId  String             @map("author_id") @db.Uuid
+  createdAt DateTime           @default(now()) @map("created_at")
+  entry     ContentEntry       @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  author    User               @relation("ContentEntryRevisionAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@unique([entryId, version])
+  @@index([entryId, createdAt])
+  @@map("content_entry_revisions")
+}
+
+model MediaAsset {
+  id           String   @id @default(uuid()) @db.Uuid
+  siteId       String   @map("site_id") @db.Uuid
+  uploadedById String   @map("uploaded_by_id") @db.Uuid
+  filename     String
+  url          String
+  mimeType     String   @map("mime_type")
+  sizeBytes    BigInt   @map("size_bytes")
+  altText      String?  @map("alt_text")
+  metadata     Json?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  site         Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  uploadedBy   User     @relation("MediaAssetUploadedBy", fields: [uploadedById], references: [id], onDelete: Restrict)
+
+  @@map("media_assets")
+}
+
+model ApiKey {
+  id                 String    @id @default(uuid()) @db.Uuid
+  siteId             String    @map("site_id") @db.Uuid
+  name               String
+  keyPrefix          String    @map("key_prefix")
+  keyHash            String    @unique @map("key_hash")
+  scopes             String[]  @default([])
+  /// Empty array = allow any origin. Otherwise the Origin header on public
+  /// delivery requests must match one of these exactly.
+  allowedOrigins     String[]  @default([]) @map("allowed_origins")
+  /// Per-key request budget for the public delivery API.
+  rateLimitPerMinute Int       @default(60) @map("rate_limit_per_minute")
+  createdById        String    @map("created_by_id") @db.Uuid
+  lastUsedAt         DateTime? @map("last_used_at")
+  expiresAt          DateTime? @map("expires_at")
+  revokedAt          DateTime? @map("revoked_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  site               Site      @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  createdBy          User      @relation("ApiKeyCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@map("api_keys")
+}
+
+model PolicyDocument {
+  id          String             @id @default(uuid()) @db.Uuid
+  type        PolicyDocumentType
+  version     String
+  title       String
+  content     String
+  isActive    Boolean            @default(false) @map("is_active")
+  publishedAt DateTime?          @map("published_at")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+  acceptances PolicyAcceptance[]
+
+  @@unique([type, version])
+  @@map("policy_documents")
+}
+
+model PolicyAcceptance {
+  id               String         @id @default(uuid()) @db.Uuid
+  userId           String         @map("user_id") @db.Uuid
+  policyDocumentId String         @map("policy_document_id") @db.Uuid
+  ipAddress        String?        @map("ip_address")
+  userAgent        String?        @map("user_agent")
+  acceptedAt       DateTime       @default(now()) @map("accepted_at")
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  policyDocument   PolicyDocument @relation(fields: [policyDocumentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, policyDocumentId])
+  @@map("policy_acceptances")
+}
+
+model AuditLog {
+  id         String    @id @default(uuid()) @db.Uuid
+  action     String
+  entityType String    @map("entity_type")
+  entityId   String    @map("entity_id")
+  metadata   Json?
+  siteId     String?   @map("site_id") @db.Uuid
+  userId     String?   @map("user_id") @db.Uuid
+  createdAt  DateTime  @default(now()) @map("created_at")
+  site       Site?     @relation(fields: [siteId], references: [id], onDelete: SetNull)
+  user       User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}

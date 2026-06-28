@@ -1,44 +1,156 @@
 @import 'tailwindcss';
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/inter";
+@import "@fontsource-variable/geist-mono";
+@import "@fontsource-variable/space-grotesk";
+@import url('https://api.fontshare.com/v2/css?f[]=general-sans@200,300,400,500,600,700&display=swap');
+/* General Sans — display & sans for Narah CMS (Fontshare, free).
+ * Variable axis: weights 200–700. */
 
 @custom-variant dark (&:is(.dark *));
 
+/* ---------------------------------------------------------------------------
+ * Narah Design Tokens
+ * Light-first palette inspired by Resend / Stripe. Neutral grays, indigo
+ * accent, soft shadows. Dark mode mirrors the same tokens.
+ * ------------------------------------------------------------------------- */
+
 :root {
-  font-family: Inter, system-ui, sans-serif;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  font-family: 'General Sans', system-ui, sans-serif;
+  color-scheme: light;
+
+  /* Brand accent — crimson */
+  --narah-accent: #e11d48;          /* rose-600 */
+  --narah-accent-hover: #be123c;    /* rose-700 */
+  --narah-accent-soft: #fff1f2;     /* rose-50 */
+  --narah-accent-ring: rgba(225, 29, 72, 0.18);
+  --narah-accent-glow: 225, 29, 72; /* RGB for canvas/box-shadow */
+
+  /* Twilight palette — extended accents for aurora / gradients / charts.
+   * Crimson is the anchor; magenta bridges; indigo/violet add cool depth.
+   * Only use for ambient visuals — primary UI stays neutral + crimson. */
+  --narah-twilight-1: 225, 29, 72;   /* crimson  #e11d48 */
+  --narah-twilight-2: 192, 38, 211;  /* magenta  #c026d3 */
+  --narah-twilight-3: 124, 58, 237;  /* violet   #7c3aed */
+  --narah-twilight-4: 67, 56, 202;   /* indigo   #4338ca */
+
+  /* Neutral surface scale */
+  --narah-bg: #ffffff;
+  --narah-bg-subtle: #fafafa;
+  --narah-surface: #ffffff;
+  --narah-surface-hover: #f5f5f5;
+  --narah-border: #e5e7eb;
+  --narah-border-strong: #d4d4d8;
+  --narah-text: #09090b;
+  --narah-text-muted: #52525b;
+  --narah-text-subtle: #a1a1aa;
+
+  /* Status */
+  --narah-success: #16a34a;
+  --narah-warning: #d97706;
+  --narah-danger: #dc2626;
+
+  /* Soft shadows — Stripe-ish */
+  --narah-shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --narah-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --narah-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06), 0 2px 4px rgba(15, 23, 42, 0.04);
+  --narah-shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.08), 0 4px 8px rgba(15, 23, 42, 0.04);
+
+  /* shadcn tokens */
+  --background: #ffffff;
+  --foreground: #09090b;
+  --card: #ffffff;
+  --card-foreground: #09090b;
+  --popover: #ffffff;
+  --popover-foreground: #09090b;
+  --primary: #e11d48;
+  --primary-foreground: #ffffff;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --muted: #f4f4f5;
+  --muted-foreground: #52525b;
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
+  --destructive: #dc2626;
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --ring: #e11d48;
+  --chart-1: #e11d48;
+  --chart-2: #f43f5e;
+  --chart-3: #06b6d4;
+  --chart-4: #16a34a;
+  --chart-5: #f59e0b;
+  --radius: 0.5rem; /* 8px — base; varied via radius scale below */
+  --sidebar: #fafafa;
+  --sidebar-foreground: #09090b;
+  --sidebar-primary: #e11d48;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f4f4f5;
+  --sidebar-accent-foreground: #18181b;
+  --sidebar-border: #e5e7eb;
+  --sidebar-ring: #e11d48;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --narah-accent: #fb7185;          /* rose-400 — softer on dark */
+  --narah-accent-hover: #fda4af;    /* rose-300 */
+  --narah-accent-soft: rgba(251, 113, 133, 0.12);
+  --narah-accent-ring: rgba(251, 113, 133, 0.32);
+  --narah-accent-glow: 251, 113, 133;
+
+  /* Twilight — slightly lifted on dark for better luminance against #09090b */
+  --narah-twilight-1: 251, 113, 133; /* rose-400  #fb7185 */
+  --narah-twilight-2: 217, 70, 239;  /* fuchsia-500 #d946ef */
+  --narah-twilight-3: 139, 92, 246;  /* violet-500 #8b5cf6 */
+  --narah-twilight-4: 99, 102, 241;  /* indigo-500 #6366f1 */
+
+  --narah-bg: #09090b;
+  --narah-bg-subtle: #0a0a0c;
+  --narah-surface: #0f0f12;
+  --narah-surface-hover: #18181b;
+  --narah-border: #1f1f23;
+  --narah-border-strong: #2a2a30;
+  --narah-text: #fafafa;
+  --narah-text-muted: #a1a1aa;
+  --narah-text-subtle: #71717a;
+
+  --narah-success: #4ade80;
+  --narah-warning: #fbbf24;
+  --narah-danger: #f87171;
+
+  --narah-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --narah-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --narah-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3);
+  --narah-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6), 0 4px 8px rgba(0, 0, 0, 0.4);
+
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: #0f0f12;
+  --card-foreground: #fafafa;
+  --popover: #0f0f12;
+  --popover-foreground: #fafafa;
+  --primary: #fb7185;
+  --primary-foreground: #09090b;
+  --secondary: #18181b;
+  --secondary-foreground: #fafafa;
+  --muted: #18181b;
+  --muted-foreground: #a1a1aa;
+  --accent: #18181b;
+  --accent-foreground: #fafafa;
+  --destructive: #f87171;
+  --border: #1f1f23;
+  --input: #1f1f23;
+  --ring: #fb7185;
+  --sidebar: #0a0a0c;
+  --sidebar-foreground: #fafafa;
+  --sidebar-primary: #fb7185;
+  --sidebar-primary-foreground: #09090b;
+  --sidebar-accent: #18181b;
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: #1f1f23;
+  --sidebar-ring: #fb7185;
 }
 
 body {
@@ -46,8 +158,12 @@ body {
 }
 
 @theme inline {
-  --font-heading: var(--font-sans);
-  --font-sans: 'Inter Variable', sans-serif;
+  --font-sans: 'General Sans', system-ui, sans-serif;
+  --font-heading: 'General Sans', system-ui, sans-serif;
+  --font-serif: 'General Sans', 'Space Grotesk Variable', system-ui, sans-serif;
+  --font-display: 'General Sans', 'Space Grotesk Variable', system-ui, sans-serif;
+  --font-mono: 'Geist Mono Variable', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -79,57 +195,407 @@ body {
   --color-card: var(--card);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
-}
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* Radius scale — base 8px, controls smaller, panels larger.
+   * Used by shadcn components via the --radius CSS var. */
+  --radius-sm: calc(var(--radius) * 0.75);   /* 6px — inputs */
+  --radius-md: var(--radius);                 /* 8px — buttons, badges */
+  --radius-lg: calc(var(--radius) * 1.25);   /* 10px — cards */
+  --radius-xl: calc(var(--radius) * 1.5);    /* 12px — main panel */
+  --radius-2xl: calc(var(--radius) * 2);     /* 16px — dialogs */
+  --radius-3xl: calc(var(--radius) * 3);     /* 24px — hero / shell outer */
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-ring/40;
+  }
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+  html {
+    @apply font-sans antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   body {
     @apply bg-background text-foreground;
   }
-  html {
-    @apply font-sans;
+  ::selection {
+    background: var(--narah-accent-ring);
+    color: var(--narah-text);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Legacy `narah-*` utility classes — kept so non-redesigned pages don't break.
+ * Re-skinned to the new neutral palette.
+ * ------------------------------------------------------------------------- */
+
+@layer components {
+  .narah-page-shell {
+    @apply relative mx-auto w-full max-w-[1400px] space-y-6;
+  }
+  .narah-page-header {
+    @apply flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between;
+  }
+  .narah-glass-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    box-shadow: var(--narah-shadow-sm);
+  }
+  .narah-solid-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    box-shadow: var(--narah-shadow-xs);
+  }
+  .narah-muted-surface {
+    background: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .narah-gradient-border {
+    border: 1px solid var(--border);
+    background: var(--card);
+  }
+  .narah-accent-dot {
+    display: inline-block;
+    height: 0.375rem;
+    width: 0.375rem;
+    border-radius: 999px;
+    background: var(--narah-accent);
+    flex-shrink: 0;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Login page motion background
+ * Subtle drifting grid + ambient gradient blobs. CSS-only.
+ * ------------------------------------------------------------------------- */
+
+@layer components {
+  /* Dark moody panel for the login hero side. Always dark regardless of
+     theme, so the star field gets dramatic contrast. */
+  .narah-night {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse 80% 60% at 30% 30%, rgba(225, 29, 72, 0.10), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 80% 80%, rgba(225, 29, 72, 0.06), transparent 60%),
+      linear-gradient(180deg, #06060a 0%, #09090b 60%, #050507 100%);
+    color: #fafafa;
+    color-scheme: dark;
+  }
+
+  /* Subtle vignette over the night panel */
+  .narah-night::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    background: radial-gradient(ellipse 90% 70% at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.45) 100%);
+  }
+
+  .narah-night-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* Dark backdrop for the Soft Aurora canvas (WebGL shader uses
+   * premultipliedAlpha:false so it expects a dark background behind). */
+  .narah-aurora-stage {
+    position: relative;
+    isolation: isolate;
+    background: linear-gradient(180deg, #050409 0%, #07060d 50%, #050409 100%);
+    color-scheme: dark;
+  }
+
+  /* ───────── Glassmorphism surfaces ─────────
+   * Layered atop the shell aurora background. Two tiers:
+   *   .narah-glass         — subtle, for main content panels
+   *   .narah-glass-strong  — denser, for sidebars / floating dialogs
+   * Both adapt to light & dark via the foreground RGB anchor below.
+   * Variables let consumers tweak per-instance: --g-tint, --g-blur, --g-border. */
+  .narah-glass {
+    --g-blur: 20px;
+    --g-tint: 255, 255, 255;
+    --g-tint-alpha: 0.55;
+    --g-border: 255, 255, 255, 0.5;
+    background: rgba(var(--g-tint), var(--g-tint-alpha));
+    backdrop-filter: blur(var(--g-blur)) saturate(140%);
+    -webkit-backdrop-filter: blur(var(--g-blur)) saturate(140%);
+    border: 1px solid rgba(var(--g-border));
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.4) inset,
+      0 12px 40px -12px rgba(15, 23, 42, 0.18),
+      0 4px 12px -4px rgba(15, 23, 42, 0.08);
+  }
+  .narah-glass-strong {
+    --g-blur: 28px;
+    --g-tint: 255, 255, 255;
+    --g-tint-alpha: 0.72;
+    --g-border: 255, 255, 255, 0.6;
+    background: rgba(var(--g-tint), var(--g-tint-alpha));
+    backdrop-filter: blur(var(--g-blur)) saturate(160%);
+    -webkit-backdrop-filter: blur(var(--g-blur)) saturate(160%);
+    border: 1px solid rgba(var(--g-border));
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.5) inset,
+      0 24px 64px -16px rgba(15, 23, 42, 0.24),
+      0 6px 16px -6px rgba(15, 23, 42, 0.12);
+  }
+  .dark .narah-glass {
+    --g-tint: 24, 24, 27;
+    --g-tint-alpha: 0.55;
+    --g-border: 255, 255, 255, 0.08;
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.04) inset,
+      0 12px 40px -12px rgba(0, 0, 0, 0.5),
+      0 4px 12px -4px rgba(0, 0, 0, 0.3);
+  }
+  .dark .narah-glass-strong {
+    --g-tint: 12, 12, 14;
+    --g-tint-alpha: 0.72;
+    --g-border: 255, 255, 255, 0.1;
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.05) inset,
+      0 24px 64px -16px rgba(0, 0, 0, 0.6),
+      0 6px 16px -6px rgba(0, 0, 0, 0.4);
+  }
+
+  /* ───────── Shell ambient background ─────────
+   * A soft, slow-moving gradient stage that sits behind the entire app
+   * shell (sidebar + main card float on top, with gaps that let this
+   * background peek through — that's the "glass" feel).
+   * Subtle: not the Soft Aurora (which is reserved for login). */
+  .narah-shell-stage {
+    position: relative;
+    isolation: isolate;
+    background-color: #f4f4f7;
+    background-image:
+      radial-gradient(ellipse 70% 50% at 12% 18%, rgba(var(--narah-twilight-1), 0.18), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 88% 12%, rgba(var(--narah-twilight-3), 0.18), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 50% 95%, rgba(var(--narah-twilight-4), 0.14), transparent 60%);
+  }
+  .dark .narah-shell-stage {
+    background-color: #07060d;
+    background-image:
+      radial-gradient(ellipse 70% 50% at 12% 18%, rgba(var(--narah-twilight-1), 0.20), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 88% 12%, rgba(var(--narah-twilight-3), 0.18), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 50% 95%, rgba(var(--narah-twilight-4), 0.16), transparent 60%);
+  }
+
+  /* ───────── Prose / rich text rendered output ───────── */
+  .narah-prose {
+    color: var(--foreground);
+    line-height: 1.65;
+  }
+  .narah-prose p { margin: 0 0 0.85em; }
+  .narah-prose p:last-child { margin-bottom: 0; }
+  .narah-prose h1,
+  .narah-prose h2,
+  .narah-prose h3 {
+    color: var(--foreground);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    margin: 1.6em 0 0.5em;
+  }
+  .narah-prose h1 { font-size: 1.625rem; }
+  .narah-prose h2 { font-size: 1.25rem; }
+  .narah-prose h3 { font-size: 1.0625rem; }
+  .narah-prose h1:first-child,
+  .narah-prose h2:first-child,
+  .narah-prose h3:first-child { margin-top: 0; }
+  .narah-prose strong { font-weight: 600; color: var(--foreground); }
+  .narah-prose em { font-style: italic; }
+  .narah-prose s { text-decoration: line-through; opacity: 0.75; }
+  .narah-prose a {
+    color: var(--narah-accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-thickness: 1px;
+  }
+  .narah-prose a:hover { text-decoration-thickness: 2px; }
+  .narah-prose code {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    background: var(--muted);
+    padding: 0.12em 0.35em;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+  .narah-prose ul,
+  .narah-prose ol {
+    margin: 0 0 0.85em;
+    padding-left: 1.5rem;
+  }
+  .narah-prose ul { list-style: disc; }
+  .narah-prose ol { list-style: decimal; }
+  .narah-prose li { margin: 0.15em 0; }
+  .narah-prose li > p { margin: 0; }
+  .narah-prose blockquote {
+    margin: 1em 0;
+    padding: 0.25em 0 0.25em 1rem;
+    border-left: 3px solid var(--narah-accent);
+    color: var(--muted-foreground);
+    font-style: italic;
+  }
+  .narah-prose hr {
+    margin: 1.6em 0;
+    border: 0;
+    border-top: 1px solid var(--border);
+  }
+  .narah-prose img,
+  .narah-prose .narah-prose-image {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 1.2em 0;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .narah-prose .ProseMirror-selectednode {
+    outline: 2px solid var(--narah-accent);
+    outline-offset: 2px;
+  }
+  /* TipTap placeholder (empty editor) */
+  .narah-prose p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    color: var(--narah-text-subtle);
+    pointer-events: none;
+    height: 0;
+    float: left;
+  }
+
+  .narah-typing-caret {
+    color: var(--narah-accent);
+    animation: narah-caret-blink 1.05s steps(2, end) infinite;
+  }
+
+  /* ───────── Animated gradient neon (crimson) ─────────
+   * Sidebar active stripe: moving vertical gradient (looped slide).
+   * Site card hover: rotating conic gradient border via mask trick.
+   * Both adapt to light/dark via --narah-accent-glow.
+   */
+  @property --narah-angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false;
+  }
+
+  @keyframes narah-stripe-slide {
+    0%   { background-position: 50% 200%; }
+    100% { background-position: 50%   0%; }
+  }
+
+  .narah-neon-stripe {
+    background: linear-gradient(
+      180deg,
+      rgba(var(--narah-accent-glow), 0.2) 0%,
+      rgba(var(--narah-accent-glow), 1)    35%,
+      #ffffff                              50%,
+      rgba(var(--narah-accent-glow), 1)    65%,
+      rgba(var(--narah-accent-glow), 0.2)  100%
+    );
+    background-size: 100% 300%;
+    animation: narah-stripe-slide 1.8s linear infinite;
+    box-shadow:
+      0 0 4px  rgba(var(--narah-accent-glow), 0.7),
+      0 0 10px rgba(var(--narah-accent-glow), 0.35);
+  }
+
+  @keyframes narah-border-spin {
+    to { --narah-angle: 360deg; }
+  }
+
+  .narah-neon-hover {
+    position: relative;
+    transition: transform 0.18s ease;
+  }
+  .narah-neon-hover::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1.5px;
+    background: conic-gradient(
+      from var(--narah-angle, 0deg),
+      transparent             0deg,
+      rgba(var(--narah-accent-glow), 0.0)   20deg,
+      rgba(var(--narah-accent-glow), 1)     70deg,
+      #ffffff                               95deg,
+      rgba(var(--narah-accent-glow), 1)    120deg,
+      rgba(var(--narah-accent-glow), 0.0)  170deg,
+      transparent                          360deg
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.22s ease;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .narah-neon-hover:hover::before,
+  .narah-neon-hover:focus-visible::before,
+  .narah-neon-hover[data-state="open"]::before {
+    opacity: 1;
+    animation: narah-border-spin 2.4s linear infinite;
+  }
+  .narah-neon-hover:hover,
+  .narah-neon-hover:focus-visible,
+  .narah-neon-hover[data-state="open"] {
+    box-shadow:
+      0 0 0  1px rgba(var(--narah-accent-glow), 0.18),
+      0 0 24px   rgba(var(--narah-accent-glow), 0.18);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .narah-neon-stripe {
+      animation: none;
+      background: var(--narah-accent);
+      box-shadow: 0 0 6px rgba(var(--narah-accent-glow), 0.6);
+    }
+    .narah-neon-hover::before {
+      animation: none;
+      background: rgba(var(--narah-accent-glow), 0.6);
+    }
+  }
+
+  @keyframes narah-caret-blink {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .narah-typing-caret { animation: none; }
+  }
+
+  /* Tiny status ticker / kbd hint */
+  .narah-kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    padding: 0 0.3125rem;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 1;
+    color: var(--narah-text-muted);
+    background: var(--muted);
+    border: 1px solid var(--border);
+    border-bottom-width: 2px;
+    border-radius: 4px;
   }
 }

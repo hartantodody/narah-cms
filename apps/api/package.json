@@ -5,21 +5,52 @@
   "type": "module",
   "scripts": {
     "dev": "bun --watch src/main.ts",
+    "db:migrate": "bunx --bun prisma migrate dev",
+    "db:generate": "bunx --bun prisma generate",
+    "db:seed": "bunx --bun prisma db seed",
+    "db:seed:demo": "bun run prisma/seed-demo.ts",
+    "db:seed:lspmice": "bun run prisma/seed-lspmice.ts",
+    "db:seed:extra-sites": "bun run prisma/seed-extra-sites.ts",
+    "db:seed:dev-accounts": "bun run prisma/seed-dev-accounts.ts",
+    "db:seed:reset": "bun run prisma/seed-reset.ts",
+    "db:studio": "bunx --bun prisma studio",
+    "db:reset": "bunx --bun prisma migrate reset",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit",
-    "lint": "echo \"lint not configured yet\""
+    "lint": "echo \"lint not configured yet\"",
+    "test": "bun test",
+    "test:watch": "bun test --watch"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1048.0",
+    "@google-analytics/data": "^6.1.0",
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.5.2",
+    "helmet": "^8.2.0",
+    "jsonwebtoken": "^9.0.3",
+    "mime-types": "^3.0.2",
+    "multer": "^2.1.1",
+    "pg": "^8.20.0",
+    "pino": "^10.3.1",
+    "pino-http": "^11.0.0",
+    "sharp": "^0.34.5",
+    "swagger-ui-express": "^5.0.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/mime-types": "^3.0.1",
+    "@types/multer": "^2.1.0",
     "@types/node": "^25.6.0",
+    "@types/pg": "^8.20.0",
+    "@types/swagger-ui-express": "^4.1.8",
+    "prisma": "^7.8.0",
     "typescript": "^6.0.3"
   }
 }

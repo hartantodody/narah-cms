@@ -1,0 +1,434 @@
+{
+  "common": {
+    "save": "Simpan",
+    "cancel": "Batal",
+    "delete": "Hapus",
+    "edit": "Ubah",
+    "create": "Buat",
+    "loading": "Memuat…",
+    "saving": "Menyimpan…",
+    "creating": "Membuat…",
+    "deleting": "Menghapus…",
+    "done": "Selesai",
+    "copy": "Salin",
+    "copied": "Tersalin",
+    "never": "Tidak pernah",
+    "yes": "Ya",
+    "no": "Tidak",
+    "optional": "(opsional)",
+    "comingSoon": "segera",
+    "tryAgain": "Coba lagi",
+    "search": "Cari",
+    "actions": "Aksi"
+  },
+  "locale": {
+    "switcher": {
+      "label": "Bahasa",
+      "tooltip": "Ganti bahasa"
+    }
+  },
+  "topbar": {
+    "adminWorkspace": "workspace admin",
+    "profile": "Profil",
+    "signOut": "Keluar"
+  },
+  "apiKeys": {
+    "section": {
+      "title": "API key",
+      "description": "Digunakan oleh website + aplikasi untuk membaca konten ter-publish dari site ini lewat public delivery API (<code>/public/v1/*</code>).",
+      "newKey": "Key baru",
+      "readOnlyTitle": "Hanya baca",
+      "readOnlyDescription": "Hanya OWNER dan ADMIN yang bisa membuat atau mencabut API key.",
+      "errorTitle": "Terjadi kesalahan",
+      "errorFallback": "Gagal memuat API key.",
+      "loadErrorFallback": "Gagal memuat API key.",
+      "createErrorFallback": "Gagal membuat API key.",
+      "updateErrorFallback": "Gagal memperbarui API key.",
+      "revokeErrorFallback": "Gagal mencabut API key.",
+      "noKeys": "Belum ada API key.",
+      "byUser": "oleh {{name}}",
+      "createdBy": "Super admin"
+    },
+    "status": {
+      "active": "Aktif",
+      "revoked": "Dicabut",
+      "expired": "Kedaluwarsa",
+      "preview": "Preview",
+      "previewTooltip": "Key ini bisa membaca entry DRAFT lewat ?preview=1"
+    },
+    "table": {
+      "name": "Nama",
+      "status": "Status",
+      "prefix": "Prefix",
+      "origins": "Origin",
+      "rate": "Rate",
+      "lastUsed": "Terakhir dipakai",
+      "expires": "Kedaluwarsa",
+      "actions": "Aksi",
+      "anyOrigin": "bebas",
+      "originsCount_one": "{{count}} origin",
+      "originsCount_other": "{{count}} origin",
+      "ratePerMinute": "{{count}}/menit",
+      "neverUsed": "Belum pernah",
+      "neverExpires": "Tidak ada",
+      "editAria": "Ubah key",
+      "deleteAria": "Hapus key",
+      "revoke": "Cabut"
+    },
+    "create": {
+      "title": "Buat API key",
+      "description": "Beri nama yang mudah diingat. Plaintext key bisa kamu copy sekali di layar berikutnya.",
+      "nameLabel": "Nama",
+      "namePlaceholder": "Website produksi",
+      "expiresLabel": "Kedaluwarsa",
+      "rateLimitLabel": "Rate limit (req/menit)",
+      "originsLabel": "Allowed origins",
+      "originsPlaceholder": "https://situsmu.com\nhttps://staging.situsmu.com",
+      "originsHint": "Satu per baris. Kosongkan untuk mengizinkan semua origin (server-to-server tetap selalu jalan).",
+      "allowDraftLabel": "Izinkan preview draft",
+      "allowDraftHint": "Mengizinkan consumer mengirim <code>?preview=1</code> untuk membaca entry DRAFT selain PUBLISHED. Aktifkan hanya untuk deployment preview/staging — jangan untuk key yang tertanam di site produksi yang dapat di-cache publik.",
+      "submit": "Buat key",
+      "submitting": "Membuat…"
+    },
+    "edit": {
+      "title": "Ubah \"{{name}}\"",
+      "description": "Perbarui nama, allowlist origin, dan rate limit. Plaintext key tidak bisa diganti — cabut + buat baru kalau perlu rotate.",
+      "originsHint": "Satu per baris. Kosong = bebas semua origin.",
+      "allowDraftHint": "Mengizinkan consumer mengirim <code>?preview=1</code> untuk membaca entry DRAFT. Matikan untuk mencabut akses draft tanpa rotate key.",
+      "submit": "Simpan",
+      "submitting": "Menyimpan…"
+    },
+    "reveal": {
+      "title": "API key baru kamu",
+      "description": "Copy sekarang — kami tidak akan menampilkannya lagi. Perlakukan seperti password.",
+      "scopesLine": "Scope: {{scopes}}",
+      "expiresLine": " · Kedaluwarsa {{date}}",
+      "neverExpiresLine": " · Tidak ada kedaluwarsa",
+      "tryIt": "Coba:"
+    },
+    "revoke": {
+      "title": "Cabut \"{{name}}\"?",
+      "description": "Key akan langsung berhenti bekerja untuk semua consumer. Operasi ini non-destruktif — record key tetap tersimpan untuk audit. Pakai Hapus untuk benar-benar menghilangkan.",
+      "submit": "Cabut",
+      "submitting": "Mencabut…"
+    },
+    "delete": {
+      "title": "Hapus \"{{name}}\"?",
+      "description": "Menghapus record key secara permanen. Kalau key masih aktif, semua consumer yang memakainya akan kehilangan akses. Tidak bisa dibatalkan.",
+      "submit": "Hapus",
+      "submitting": "Menghapus…"
+    }
+  },
+  "guides": {
+    "ga": {
+      "backToSettings": "Kembali ke pengaturan situs",
+      "breadcrumb": "panduan / google analytics",
+      "title": "Hubungkan Google Analytics",
+      "lead": "Enam langkah untuk menampilkan analitik pengunjung di overview situs. Sekitar 10 menit kalau ini pertama kalinya.",
+      "prereqTitle": "Sebelum mulai",
+      "prereq1": "Property GA4 sudah dibuat di Google Analytics dan tracking tag-nya sudah terpasang di situs live.",
+      "prereq2": "Punya akses ke Google Cloud Console (akun Google yang sama bisa dipakai untuk keduanya).",
+      "prereq3": "Kamu OWNER atau ADMIN di site Narah yang ingin dihubungkan.",
+      "step1": {
+        "title": "Ambil GA4 Property ID",
+        "description": "Ini ID numerik yang dipakai GA Data API — beda dengan Measurement ID (G-XXXXX) yang dipasang di website.",
+        "b1": "Buka Google Analytics dan pilih property-mu.",
+        "b2": "Pojok kiri bawah → Admin (icon gear).",
+        "b3": "Di kolom Property → Property Settings → Property details.",
+        "b4": "Copy Property ID di atas card (angka 9–10 digit).",
+        "example": "Contoh",
+        "exampleNote": "punyamu akan beda"
+      },
+      "step2": {
+        "title": "Buat (atau pilih) project Google Cloud",
+        "description": "Service account ada di dalam Cloud project. Project apa pun bisa — bikin baru kalau belum ada preferensi.",
+        "b1": "Buka Google Cloud Console.",
+        "b2": "Klik dropdown project di atas → New Project (atau pilih yang sudah ada).",
+        "b3": "Kasih nama misal \"narah-lsp-mice\" dan create."
+      },
+      "step3": {
+        "title": "Aktifkan Analytics Data API",
+        "description": "API ini yang akan dipanggil CMS buat ambil laporan.",
+        "b1": "Di Cloud project-mu, buka link di bawah.",
+        "b2": "Klik Enable. Tunggu beberapa detik.",
+        "b3": "Kalau muncul \"API enabled\", aman.",
+        "link": "Buka Analytics Data API"
+      },
+      "step4": {
+        "title": "Buat service account + key",
+        "description": "Service account memungkinkan CMS auth sebagai mesin — tanpa OAuth manual.",
+        "b1": "Di Cloud Console → IAM & Admin → Service Accounts → + Create Service Account.",
+        "b2": "Kasih nama (misal narah-cms-analytics). Skip step optional Grant access → Continue → Done.",
+        "b3": "Klik service account yang baru dibuat → tab Keys → Add Key → Create new key → JSON → Create.",
+        "b4": "File JSON otomatis ke-download. Simpan baik-baik — siapa pun yang punya file ini bisa baca analitikmu.",
+        "warning": "Jangan commit JSON-nya ke git atau share publik. Kita enkripsi at-rest, tapi file di folder Downloads-mu masih plaintext."
+      },
+      "step5": {
+        "title": "Beri akses service account ke property GA",
+        "description": "Skip langkah ini = alasan #1 kenapa laporan gagal load. Service account bisa auth tapi belum bisa lihat data sampai kamu tambahkan ke GA dengan role Viewer.",
+        "b1": "Buka file JSON yang sudah di-download di text editor. Copy seluruh value dari field client_email.",
+        "b2": "Buka Google Analytics → pojok kiri bawah Admin (icon gear) → kolom Property → Property access management.",
+        "b3": "Tombol biru + di kanan atas → Add users → tempel email service account.",
+        "b4": "Role: Viewer (bukan Marketer / bukan Analyst). Uncheck \"Notify by email\" — service account tidak bisa terima email. Klik Add.",
+        "emailFormat": "Format email service account",
+        "critical": "Wajib"
+      },
+      "step6": {
+        "title": "Tempel semuanya ke Narah",
+        "description": "Tahap akhir — balik ke CMS.",
+        "b1": "Buka Site settings → section Google Analytics.",
+        "b2": "Property ID: tempel angka dari langkah 1.",
+        "b3": "Service account JSON: buka file dari langkah 4 dan tempel seluruh isinya.",
+        "b4": "Klik Hubungkan. Overview situs akan mulai menampilkan data pengunjung dalam waktu kurang dari semenit."
+      },
+      "doneTitle": "Selesai",
+      "doneDescription": "Balik ke settings untuk tempel kredensialnya. Kalau baru pasang tracking hari ini, GA butuh 24–48 jam untuk menghitung angka 30-hari — realtime jalan instan.",
+      "openSettings": "Buka Settings",
+      "troubleshootTitle": "Troubleshooting",
+      "t1": {
+        "symptom": "\"Permission denied\" atau 403 setelah Connect",
+        "fix": "Email service account belum ditambahkan ke property GA. Ulangi langkah 5 dan pastikan role-nya Viewer (bukan Marketer/Analyst — yang itu tidak grant API read di semua property)."
+      },
+      "t2": {
+        "symptom": "\"Property not found\" atau 404",
+        "fix": "Property ID salah. Cek lagi langkah 1 — pastikan kamu copy ID numerik dari card Property Settings, bukan Measurement ID (G-XXXXX)."
+      },
+      "t3": {
+        "symptom": "Datanya nol di mana-mana",
+        "fix": "Situsnya memang belum ada traffic, atau GA belum agregasi data (24–48 jam untuk tracking baru). Buka GA langsung untuk konfirmasi data mengalir."
+      },
+      "t4": {
+        "symptom": "\"Service account must be valid JSON\"",
+        "fix": "Yang ditempel bukan isi file JSON. Buka file yang ter-download di text editor dan copy semua dari { sampai } termasuk kurung kurawalnya."
+      }
+    }
+  },
+  "analytics": {
+    "title": "Analitik pengunjung",
+    "range": "{{days}} hari terakhir",
+    "manage": "Kelola",
+    "loading": "Memuat…",
+    "errorLoad": "Gagal memuat analitik.",
+    "noData": "Belum ada data untuk rentang ini.",
+    "notConnectedTitle": "Google Analytics belum terhubung",
+    "notConnectedDescription": "Hubungkan property GA4 untuk menampilkan data pengunjung dan performa konten di sini.",
+    "connectCta": "Hubungkan Google Analytics",
+    "reviewConfig": "Periksa konfigurasi",
+    "metrics": {
+      "users": "Pengguna aktif",
+      "pageViews": "Tayangan halaman",
+      "sessions": "Sesi",
+      "bounceRate": "Bounce rate"
+    },
+    "topPages": "Halaman teratas",
+    "trafficSources": "Sumber traffic",
+    "trendTitle": "Tren pengguna aktif",
+    "trendSubtitle": "{{users}} pengguna · {{views}} tayangan halaman selama periode ini",
+    "settings": {
+      "title": "Google Analytics",
+      "description": "Hubungkan property GA4 menggunakan service account agar kami bisa mengambil laporannya untuk kamu.",
+      "connected": "Terhubung",
+      "disconnected": "Belum terhubung",
+      "errorTitle": "Terjadi kesalahan",
+      "successTitle": "Tersimpan",
+      "propertyIdLabel": "GA4 property ID",
+      "propertyIdHint": "Hanya angka. Cek di GA → Admin → Property Settings.",
+      "serviceAccountLabel": "Service account JSON",
+      "serviceAccountHint": "Tempel seluruh isi JSON key yang di-download dari Google Cloud.",
+      "serviceAccountHintConnected": "Service account sudah tersimpan. Tempel JSON baru hanya kalau ingin merotasi key.",
+      "saving": "Menyimpan…",
+      "connect": "Hubungkan",
+      "update": "Perbarui",
+      "disconnect": "Putuskan",
+      "disconnecting": "Memutuskan…",
+      "errorSave": "Gagal menyimpan konfigurasi analitik.",
+      "errorDisconnect": "Gagal memutuskan analitik.",
+      "savedSuccess": "Google Analytics terhubung. Laporan akan muncul di overview situs.",
+      "openGuide": "Buka panduan setup lengkap"
+    }
+  },
+  "content": {
+    "hub": {
+      "breadcrumb": "situs / konten",
+      "title": "Konten",
+      "description": "Semua content type yang sudah didefinisikan di situs ini. Buka salah satu untuk melihat & mengubah entrinya.",
+      "empty": "Belum ada content type",
+      "emptyHint": "Definisikan skema pertamamu di Configure → Schema.",
+      "singleton": "Singleton",
+      "collection": "Koleksi",
+      "entry_one": "{{count}} entri",
+      "entry_other": "{{count}} entri"
+    },
+    "entries": {
+      "backToContent": "Kembali ke konten",
+      "titleSuffix": "entri",
+      "viewApi": "Lihat API",
+      "newEntry": "Entri baru",
+      "searchPlaceholder": "Cari berdasarkan slug…",
+      "status": {
+        "all": "Semua",
+        "draft": "Draf",
+        "published": "Tayang",
+        "archived": "Arsip"
+      },
+      "columns": {
+        "slug": "Slug",
+        "status": "Status",
+        "updated": "Diperbarui",
+        "updatedBy": "Diperbarui oleh",
+        "actions": "Aksi"
+      },
+      "empty": "Belum ada entri",
+      "emptyHint": "Klik \"Entri baru\" untuk membuat yang pertama.",
+      "errorTitle": "Terjadi kesalahan"
+    },
+    "editor": {
+      "backToEntries": "Kembali ke entri",
+      "editPrefix": "Ubah",
+      "newPrefix": "Baru",
+      "saveDraft": "Simpan draf",
+      "saving": "Menyimpan…",
+      "publish": "Tayangkan",
+      "publishing": "Menayangkan…",
+      "unpublish": "Batalkan tayang",
+      "deleteEntry": "Hapus entri",
+      "detailsButton": "Slug & detail audit",
+      "deleteConfirmTitle": "Hapus entri ini?",
+      "deleteConfirmDescription": "Menghapus entri secara permanen. Tindakan ini tidak bisa dibatalkan.",
+      "cantSaveTitle": "Gagal menyimpan",
+      "slugLabel": "Slug",
+      "slugPlaceholder": "otomatis-dari-judul",
+      "slugHint": "Kosongkan untuk meng-generate dari field yang mirip judul.",
+      "audit": "Audit",
+      "auditCreatedBy": "Dibuat oleh",
+      "auditCreatedAt": "Dibuat pada",
+      "auditUpdatedBy": "Diperbarui oleh",
+      "auditUpdatedAt": "Diperbarui pada",
+      "auditPublished": "Ditayangkan",
+      "auditEmpty": "Simpan draf untuk melihat info audit.",
+      "noFields": "Content type ini belum punya field.",
+      "addFieldsHint": "Tambahkan field di schema builder.",
+      "askAdmin": "Minta super admin untuk menambahkan field.",
+      "viewerNotice": "Role kamu hanya bisa lihat, tidak bisa edit. Minta admin untuk upgrade akses.",
+      "revisions": {
+        "title": "Revisi",
+        "empty": "Belum ada revisi. Setiap save akan disnapshot otomatis.",
+        "footer": "10 save terakhir disimpan. Yang lebih lama otomatis dibersihkan.",
+        "view": "lihat",
+        "viewing": "ditampilkan",
+        "by": "oleh",
+        "previewBannerTitle": "Menampilkan v{{version}}",
+        "previewBannerDescription": "Disimpan {{when}} oleh {{author}}. Form di bawah hanya bisa dilihat sampai kamu pulihkan atau tutup versi ini.",
+        "previewBannerCurrentTitle": "Kamu sedang melihat versi terbaru (v{{version}})",
+        "previewBannerCurrentDescription": "Ini adalah kondisi entri sekarang — disimpan {{when}} oleh {{author}}. Tidak ada yang perlu dipulihkan. Tutup tampilan ini untuk lanjut mengedit.",
+        "previewBannerClose": "Kembali ke versi terbaru",
+        "previewBannerRestore": "Pulihkan versi ini",
+        "previewTitle": "Revisi v{{version}}",
+        "previewDescription": "Disimpan {{when}} oleh {{author}}. Bandingkan snapshot (\"Dulu\") dengan kondisi saat ini (\"Sekarang\").",
+        "changed": "berubah",
+        "then": "Dulu",
+        "now": "Sekarang",
+        "close": "Tutup",
+        "restore": "Pulihkan v{{version}}",
+        "restoring": "Memulihkan…",
+        "noFields": "Content type ini tidak punya field.",
+        "loading": "Memuat revisi…",
+        "errorLoad": "Gagal memuat revisi.",
+        "errorRevision": "Gagal memuat revisi ini.",
+        "errorRestore": "Gagal memulihkan revisi ini."
+      }
+    }
+  },
+  "schema": {
+    "page": {
+      "breadcrumb": "situs / skema",
+      "title": "Skema",
+      "description": "Definisikan content type yang reusable — field, validasi, relasi — sebagai pondasi semua entri di situs ini."
+    },
+    "contentTypes": {
+      "title": "Content Type",
+      "description": "Definisikan skema reusable untuk konten di situs ini.",
+      "readOnly": "Hanya baca",
+      "create": "Buat content type",
+      "searchPlaceholder": "Cari content type…",
+      "empty": "Belum ada content type",
+      "emptyHint": "Buat skema pertamamu untuk mulai memodelkan konten situs ini.",
+      "columns": {
+        "name": "Nama",
+        "apiId": "API ID",
+        "mode": "Mode",
+        "description": "Deskripsi",
+        "fields": "Field",
+        "entries": "Entri",
+        "updated": "Diperbarui",
+        "actions": "Aksi"
+      },
+      "mode": {
+        "singleton": "Singleton",
+        "collection": "Koleksi"
+      },
+      "actions": {
+        "open": "Buka",
+        "edit": "Ubah",
+        "delete": "Hapus"
+      }
+    },
+    "builder": {
+      "back": "Kembali ke situs",
+      "badge": "Content Type Builder",
+      "viewEntries": "Lihat entri",
+      "editType": "Ubah content type",
+      "addField": "Tambah field",
+      "deleteType": "Hapus content type",
+      "siteLabel": "Situs",
+      "updatedLabel": "Diperbarui",
+      "noDescription": "Belum ada deskripsi skema.",
+      "tabs": {
+        "overview": "Ringkasan",
+        "visual": "Editor visual",
+        "code": "Code (JSON)"
+      },
+      "overview": {
+        "summary": {
+          "title": "Ringkasan skema",
+          "description": "Referensi cepat untuk model konten ini.",
+          "apiId": "API ID",
+          "mode": "Mode",
+          "fieldCount": "Jumlah field",
+          "siteRole": "Role di situs"
+        },
+        "notes": {
+          "title": "Catatan builder",
+          "description": "Lihat API explorer di bawah sebelum diserahkan ke FE.",
+          "body": "Tetapkan nama field, apiId, dan metadata skema di tab <strong>Editor visual</strong> terlebih dahulu. API Explorer di bawah otomatis menghasilkan bentuk response, tipe TypeScript, dan contoh cURL untuk tim frontend kamu."
+        },
+        "apiExplorer": {
+          "title": "API explorer",
+          "description": "Bentuk response API publik untuk content type ini."
+        }
+      },
+      "fields": {
+        "title": "Field",
+        "description": "Definisikan field reusable untuk skema ini. Gunakan tombol panah untuk mengatur urutan.",
+        "empty": "Belum ada field yang didefinisikan.",
+        "emptyHint": "Mulai bentuk skema ini dengan menambahkan field pertamamu.",
+        "addField": "Tambah field",
+        "apiIdLabel": "API ID",
+        "orderLabel": "Urutan",
+        "updatedLabel": "Diperbarui",
+        "noDescription": "Belum ada deskripsi field.",
+        "badges": {
+          "required": "Wajib",
+          "localized": "Terlokalisasi",
+          "list": "List"
+        },
+        "actions": {
+          "up": "Naik",
+          "down": "Turun",
+          "edit": "Ubah",
+          "delete": "Hapus"
+        }
+      }
+    }
+  }
+}

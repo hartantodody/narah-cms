@@ -1,11 +1,25 @@
 import type { ErrorRequestHandler } from 'express'
+import { logger } from '../lib/logger'
+import type { ApiError } from '../lib/response'
 
 type ErrorWithStatus = Error & {
   status?: number
   statusCode?: number
+  code?: string
+  issues?: string[]
 }
 
-export const errorMiddleware: ErrorRequestHandler = (error, _req, res, next) => {
+/**
+ * Centralized error middleware. Every error thrown / `next(err)`ed inside an
+ * admin route lands here and gets re-shaped into the standard envelope:
+ *
+ *   { success: false, message, code?, issues? }
+ *
+ * 5xx errors hide the original message (treated as opaque server failures)
+ * but the original is still logged. 4xx errors pass `message` through so
+ * clients can surface it.
+ */
+export const errorMiddleware: ErrorRequestHandler = (error, req, res, next) => {
   if (res.headersSent) {
     next(error)
     return
@@ -19,10 +33,20 @@ export const errorMiddleware: ErrorRequestHandler = (error, _req, res, next) => 
       : typedError.message || 'Request failed'
 
   if (statusCode >= 500) {
-    console.error(error)
+    logger.error(
+      { err: error, requestId: req.id, path: req.path, method: req.method },
+      'request failed'
+    )
   }
 
-  res.status(statusCode).json({
-    message
-  })
+  const issues = Array.isArray(typedError.issues) ? typedError.issues : undefined
+
+  const payload: ApiError = {
+    success: false,
+    message,
+    ...(typedError.code ? { code: typedError.code } : {}),
+    ...(issues ? { issues } : {})
+  }
+
+  res.status(statusCode).json(payload)
 }
