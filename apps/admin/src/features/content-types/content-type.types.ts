@@ -11,7 +11,26 @@ export type ContentFieldType =
   | "JSON"
   | "SELECT"
   | "MULTI_SELECT"
-  | "RELATION";
+  | "RELATION"
+  | "GROUP";
+
+/**
+ * Child field definition used inside a GROUP field's config.children.
+ * Mirrors the backend shape: a subset of ContentField. Stored as JSON,
+ * not as separate rows. GROUP cannot nest in a child (2-level cap).
+ */
+export type GroupChildFieldDef = {
+  apiId: string;
+  label: string;
+  type: Exclude<ContentFieldType, "GROUP">;
+  description?: string | null;
+  required?: boolean;
+  isList?: boolean;
+  config?: Record<string, unknown> | null;
+};
+
+/** Max number of children a GROUP can declare. Mirrors backend cap. */
+export const GROUP_MAX_CHILDREN = 5;
 
 export type ContentField = {
   id: string;

@@ -52,6 +52,7 @@ enum ContentFieldType {
   SELECT
   MULTI_SELECT
   RELATION
+  GROUP
 }
 
 enum ContentEntryStatus {

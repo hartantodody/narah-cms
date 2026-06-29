@@ -469,6 +469,42 @@ const stableStringify = (value: unknown): string => {
   return `{${parts.join(',')}}`
 }
 
+/**
+ * Materialize the child fields declared inside a GROUP's
+ * config.children[] as FieldDef objects, so the recursive validator can
+ * treat them like top-level fields. Children come from JSON config (not
+ * the ContentField table) so they have no DB id — we fabricate one from
+ * the parent + apiId for traceability in error messages.
+ */
+const groupChildrenToFieldDefs = (parent: FieldDef): FieldDef[] => {
+  const config = isPlainObject(parent.config) ? parent.config : null
+  const rawChildren = config ? (config.children as unknown) : undefined
+  if (!Array.isArray(rawChildren)) return []
+  const defs: FieldDef[] = []
+  for (const child of rawChildren) {
+    if (!isPlainObject(child)) continue
+    const apiId = typeof child.apiId === 'string' ? child.apiId : ''
+    const type =
+      typeof child.type === 'string' && child.type in ContentFieldType
+        ? (child.type as ContentFieldType)
+        : null
+    if (!apiId || !type) continue
+    defs.push({
+      id: `${parent.id}.${apiId}`,
+      apiId,
+      label: typeof child.label === 'string' ? child.label : apiId,
+      type,
+      required: child.required === true,
+      isList: child.isList === true,
+      localized: false,
+      config: isPlainObject(child.config) ? child.config : null,
+      validation: isPlainObject(child.validation) ? child.validation : null,
+      defaultValue: child.defaultValue ?? null
+    })
+  }
+  return defs
+}
+
 const validateAndNormalizeEntryData = (
   fields: FieldDef[],
   rawData: unknown
@@ -485,6 +521,57 @@ const validateAndNormalizeEntryData = (
     // MULTI_SELECT is always a list — even when isList is false
     const isListField =
       field.isList || field.type === ContentFieldType.MULTI_SELECT
+
+    // ── GROUP fields are validated recursively against their children ──
+    if (field.type === ContentFieldType.GROUP) {
+      const childDefs = groupChildrenToFieldDefs(field)
+
+      // Singleton group → object; list group → array of objects.
+      if (field.isList) {
+        if (isMissing) {
+          if (field.required) issues.push(`${field.apiId} is required.`)
+          data[field.apiId] = []
+          continue
+        }
+        if (!Array.isArray(raw)) {
+          issues.push(`${field.apiId} must be an array of groups.`)
+          data[field.apiId] = []
+          continue
+        }
+        const out: JsonObject[] = []
+        for (const [idx, item] of raw.entries()) {
+          const { data: childData, issues: childIssues } =
+            validateAndNormalizeEntryData(childDefs, item)
+          for (const m of childIssues) {
+            issues.push(`${field.apiId}[${idx}].${m}`)
+          }
+          out.push(childData)
+        }
+        data[field.apiId] = out
+        if (field.required && out.length === 0) {
+          issues.push(`${field.apiId} must contain at least one group item.`)
+        }
+      } else {
+        if (isMissing) {
+          if (field.required) issues.push(`${field.apiId} is required.`)
+          // Materialize empty object with normalized child defaults so
+          // shape is stable for stableStringify-based no-op detection.
+          const { data: emptyChildren } = validateAndNormalizeEntryData(
+            childDefs,
+            {}
+          )
+          data[field.apiId] = emptyChildren
+          continue
+        }
+        const { data: childData, issues: childIssues } =
+          validateAndNormalizeEntryData(childDefs, raw)
+        for (const m of childIssues) {
+          issues.push(`${field.apiId}.${m}`)
+        }
+        data[field.apiId] = childData
+      }
+      continue
+    }
 
     if (isMissing) {
       if (field.required) {

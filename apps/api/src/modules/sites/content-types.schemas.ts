@@ -52,6 +52,75 @@ const fieldDefaultValueSchema = jsonValueSchema.nullable().optional()
 const isValidUuid = (value: string) =>
   z.string().uuid().safeParse(value).success
 
+/** Max number of child fields a GROUP can declare. Keeps payloads bounded
+ *  and forces editors to think about composition vs. flat fields. */
+export const GROUP_MAX_CHILDREN = 5
+
+const API_ID_RE = /^[a-z][a-z0-9_]*$/
+
+const isPlainObject = (value: unknown): value is Record<string, JsonValue> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+
+/** Field types allowed as direct children of a GROUP. Excludes GROUP itself
+ *  to enforce the 2-level nesting cap. */
+const GROUP_CHILD_DISALLOWED = new Set<ContentFieldType>([ContentFieldType.GROUP])
+
+/**
+ * Validate the shape of a single child entry inside a GROUP's
+ * config.children[]. Children look like simplified field defs:
+ *   { apiId, label, type, required?, isList?, config?, description? }
+ * Returns a flat list of issue strings prefixed with the child path so
+ * the parent's superRefine can attach them to the right zod path.
+ */
+const getGroupChildIssues = (child: unknown, index: number): string[] => {
+  const path = `children[${index}]`
+  const issues: string[] = []
+
+  if (!isPlainObject(child)) {
+    issues.push(`${path} must be an object.`)
+    return issues
+  }
+
+  const c = child as Record<string, JsonValue>
+
+  if (typeof c.apiId !== 'string' || !API_ID_RE.test(c.apiId)) {
+    issues.push(`${path}.apiId must match /^[a-z][a-z0-9_]*$/`)
+  }
+  if (typeof c.label !== 'string' || c.label.trim().length < 1) {
+    issues.push(`${path}.label is required.`)
+  }
+  if (typeof c.type !== 'string') {
+    issues.push(`${path}.type is required.`)
+  } else if (!(c.type in ContentFieldType)) {
+    issues.push(`${path}.type is not a valid field type.`)
+  } else if (GROUP_CHILD_DISALLOWED.has(c.type as ContentFieldType)) {
+    issues.push(
+      `${path}.type GROUP is not allowed inside another GROUP (max 2-level nesting).`
+    )
+  }
+  if (c.required !== undefined && typeof c.required !== 'boolean') {
+    issues.push(`${path}.required must be a boolean.`)
+  }
+  if (c.isList !== undefined && typeof c.isList !== 'boolean') {
+    issues.push(`${path}.isList must be a boolean.`)
+  }
+  if (c.config !== undefined && c.config !== null && !isPlainObject(c.config)) {
+    issues.push(`${path}.config must be an object or null.`)
+  }
+  // Recurse into the child's own config rules (SELECT options, RELATION id).
+  if (typeof c.type === 'string' && c.type in ContentFieldType) {
+    const childConfig = isPlainObject(c.config) ? c.config : null
+    issues.push(
+      ...getContentFieldConfigIssues({
+        type: c.type as ContentFieldType,
+        config: childConfig
+      }).map((m) => `${path}: ${m}`)
+    )
+  }
+
+  return issues
+}
+
 export const getContentFieldConfigIssues = ({
   type,
   config
@@ -60,6 +129,9 @@ export const getContentFieldConfigIssues = ({
   config?: Record<string, JsonValue> | null
 }) => {
   if (!config) {
+    if (type === ContentFieldType.GROUP) {
+      return ['GROUP fields require config.children with at least one child.']
+    }
     return [] as string[]
   }
 
@@ -84,6 +156,30 @@ export const getContentFieldConfigIssues = ({
     issues.push(
       'config.contentTypeId must be a valid uuid for RELATION fields.'
     )
+  }
+
+  if (type === ContentFieldType.GROUP) {
+    const children = (config as { children?: unknown }).children
+    if (!Array.isArray(children) || children.length === 0) {
+      issues.push('GROUP fields require config.children with at least one child.')
+    } else {
+      if (children.length > GROUP_MAX_CHILDREN) {
+        issues.push(
+          `GROUP fields may have at most ${GROUP_MAX_CHILDREN} children; got ${children.length}.`
+        )
+      }
+      const seenApiIds = new Set<string>()
+      for (const [i, child] of children.entries()) {
+        issues.push(...getGroupChildIssues(child, i))
+        if (isPlainObject(child) && typeof child.apiId === 'string') {
+          const key = child.apiId.toLowerCase()
+          if (seenApiIds.has(key)) {
+            issues.push(`Duplicate apiId "${child.apiId}" inside GROUP children.`)
+          }
+          seenApiIds.add(key)
+        }
+      }
+    }
   }
 
   return issues

@@ -11,8 +11,13 @@ import { prisma } from '../../lib/prisma'
  *   ?populate=heroImage,author          → expand these specific top-level fields
  *   ?populate=*                         → expand every MEDIA + RELATION field
  *
- * Only top-level fields are expanded (nested expansion of related entries'
- * own MEDIA/RELATION fields is not yet supported — keep request shape small).
+ * Top-level expansion covers MEDIA + RELATION. GROUP fields are also
+ * traversed one level deep: any MEDIA or RELATION children inside a
+ * GROUP item get their IDs resolved into full objects, so a gallery
+ * field returns objects ready to render.
+ *
+ * Nested expansion of related entries' own MEDIA/RELATION fields is
+ * still not supported (would balloon request size — keep payloads small).
  *
  * MEDIA value shapes accepted (matches validateAndNormalizeEntryData):
  *   - "<uuid>"
@@ -29,6 +34,8 @@ type FieldMeta = {
   apiId: string
   type: string
   isList: boolean
+  /** Only set when type === 'GROUP'. Flat list (no recursion — 2-level cap). */
+  groupChildren?: FieldMeta[]
 }
 
 type PopulateOptions = {
@@ -120,9 +127,16 @@ export const parsePopulate = (
   return fields.length > 0 ? fields : null
 }
 
+const groupHasExpandableChild = (f: FieldMeta): boolean =>
+  f.type === 'GROUP' &&
+  (f.groupChildren ?? []).some(
+    (c) => c.type === 'MEDIA' || c.type === 'RELATION'
+  )
+
 const resolveFieldsToPopulate = (opts: PopulateOptions): FieldMeta[] => {
   const expandable = opts.contentTypeFields.filter(
-    (f) => f.type === 'MEDIA' || f.type === 'RELATION'
+    (f) =>
+      f.type === 'MEDIA' || f.type === 'RELATION' || groupHasExpandableChild(f)
   )
   if (opts.fields === '*') return expandable
   const wanted = new Set(opts.fields)
@@ -134,6 +148,9 @@ const resolveFieldsToPopulate = (opts: PopulateOptions): FieldMeta[] => {
  * Mutates the entries array shape: returns a new list of entries with the
  * same shape but `data` rewritten so expanded fields contain full nested
  * objects instead of raw IDs.
+ *
+ * For GROUP fields, each item's MEDIA/RELATION children get the same
+ * treatment one level deep.
  */
 export const expandEntries = async <
   T extends { data: unknown; siteId?: string | null }
@@ -149,6 +166,31 @@ export const expandEntries = async <
   const mediaIds = new Set<string>()
   const relationIds = new Set<string>()
 
+  const collectIdsFromField = (field: FieldMeta, value: unknown) => {
+    if (value == null) return
+    if (field.type === 'MEDIA' || field.type === 'RELATION') {
+      const items = Array.isArray(value) ? value : [value]
+      for (const item of items) {
+        const id = extractId(item)
+        if (!id) continue
+        if (field.type === 'MEDIA') mediaIds.add(id)
+        else relationIds.add(id)
+      }
+      return
+    }
+    if (field.type === 'GROUP' && field.groupChildren) {
+      const items = Array.isArray(value) ? value : [value]
+      for (const item of items) {
+        if (!item || typeof item !== 'object') continue
+        for (const child of field.groupChildren) {
+          if (child.type !== 'MEDIA' && child.type !== 'RELATION') continue
+          const childValue = (item as Record<string, unknown>)[child.apiId]
+          collectIdsFromField(child, childValue)
+        }
+      }
+    }
+  }
+
   for (const entry of entries) {
     const data =
       entry.data && typeof entry.data === 'object'
@@ -156,15 +198,7 @@ export const expandEntries = async <
         : null
     if (!data) continue
     for (const field of fieldsToExpand) {
-      const value = data[field.apiId]
-      if (value == null) continue
-      const items = Array.isArray(value) ? value : [value]
-      for (const item of items) {
-        const id = extractId(item)
-        if (!id) continue
-        if (field.type === 'MEDIA') mediaIds.add(id)
-        else if (field.type === 'RELATION') relationIds.add(id)
-      }
+      collectIdsFromField(field, data[field.apiId])
     }
   }
 
@@ -194,21 +228,49 @@ export const expandEntries = async <
     relationEntries.map((e) => [e.id, serializeRelationEntry(e)])
   )
 
-  const rewriteValue = (
+  const lookupOne = (childType: string, item: unknown): unknown => {
+    const id = extractId(item)
+    if (!id) return item
+    if (childType === 'MEDIA') return mediaMap.get(id) ?? null
+    if (childType === 'RELATION') return relationMap.get(id) ?? null
+    return item
+  }
+
+  const rewriteScalarOrList = (
     field: FieldMeta,
     value: unknown
   ): unknown => {
-    const lookup = (item: unknown): unknown => {
-      const id = extractId(item)
-      if (!id) return item
-      if (field.type === 'MEDIA') return mediaMap.get(id) ?? null
-      if (field.type === 'RELATION') return relationMap.get(id) ?? null
-      return item
-    }
     if (Array.isArray(value)) {
-      return value.map(lookup).filter((v) => v !== null)
+      return value.map((v) => lookupOne(field.type, v)).filter((v) => v !== null)
     }
-    return lookup(value)
+    return lookupOne(field.type, value)
+  }
+
+  const rewriteGroupItem = (
+    field: FieldMeta,
+    item: unknown
+  ): unknown => {
+    if (!item || typeof item !== 'object') return item
+    const out: Record<string, unknown> = { ...(item as Record<string, unknown>) }
+    for (const child of field.groupChildren ?? []) {
+      if (child.type !== 'MEDIA' && child.type !== 'RELATION') continue
+      if (!(child.apiId in out)) continue
+      out[child.apiId] = rewriteScalarOrList(child, out[child.apiId])
+    }
+    return out
+  }
+
+  const rewriteValue = (field: FieldMeta, value: unknown): unknown => {
+    if (field.type === 'MEDIA' || field.type === 'RELATION') {
+      return rewriteScalarOrList(field, value)
+    }
+    if (field.type === 'GROUP') {
+      if (Array.isArray(value)) {
+        return value.map((item) => rewriteGroupItem(field, item))
+      }
+      return rewriteGroupItem(field, value)
+    }
+    return value
   }
 
   return entries.map((entry) => {
@@ -225,16 +287,41 @@ export const expandEntries = async <
   })
 }
 
+const parseGroupChildren = (config: unknown): FieldMeta[] | undefined => {
+  if (!config || typeof config !== 'object') return undefined
+  const rawChildren = (config as { children?: unknown }).children
+  if (!Array.isArray(rawChildren)) return undefined
+  return rawChildren
+    .filter(
+      (c): c is { apiId: string; type: string; isList?: boolean } =>
+        c !== null &&
+        typeof c === 'object' &&
+        typeof (c as { apiId?: unknown }).apiId === 'string' &&
+        typeof (c as { type?: unknown }).type === 'string'
+    )
+    .map((c) => ({
+      apiId: c.apiId,
+      type: c.type,
+      isList: c.isList === true
+    }))
+}
+
 export const getContentTypeFields = async (
   contentTypeId: string
 ): Promise<FieldMeta[]> => {
   const fields = await prisma.contentField.findMany({
     where: { contentTypeId },
-    select: { apiId: true, type: true, isList: true }
+    select: { apiId: true, type: true, isList: true, config: true }
   })
-  return fields.map((f) => ({
-    apiId: f.apiId,
-    type: f.type,
-    isList: f.isList
-  }))
+  return fields.map((f) => {
+    const meta: FieldMeta = {
+      apiId: f.apiId,
+      type: f.type,
+      isList: f.isList
+    }
+    if (f.type === 'GROUP') {
+      meta.groupChildren = parseGroupChildren(f.config)
+    }
+    return meta
+  })
 }

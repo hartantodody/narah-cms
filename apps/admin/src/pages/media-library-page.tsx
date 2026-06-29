@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -138,15 +139,21 @@ export function MediaLibraryPage() {
     if (!files || files.length === 0 || !siteId) return;
     setIsUploading(true);
     setError(null);
+    const total = files.length;
     try {
       for (const file of Array.from(files)) {
         await uploadMediaAsset(siteId, file);
       }
       setPage(1);
       await load();
+      toast.success(total === 1 ? "Upload complete" : `${total} files uploaded`);
     } catch (err) {
-      if (err instanceof ApiError) setError(err.message);
-      else setError(getApiErrorMessage(err, "Upload failed."));
+      const msg =
+        err instanceof ApiError
+          ? err.message
+          : getApiErrorMessage(err, "Upload failed.");
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -163,8 +170,10 @@ export function MediaLibraryPage() {
       });
       setPreviewing(asset);
       setItems((prev) => prev.map((a) => (a.id === asset.id ? asset : a)));
+      toast.success("Asset updated");
     } catch (err) {
-      setError(getApiErrorMessage(err, "Unable to update asset."));
+      const msg = getApiErrorMessage(err, "Unable to update asset.");
+      toast.error(msg);
     } finally {
       setIsSavingAlt(false);
     }
@@ -446,7 +455,14 @@ export function MediaLibraryPage() {
                       onClick={handleSaveAsset}
                       disabled={isSavingAlt || !hasChanges}
                     >
-                      {isSavingAlt ? "Saving…" : "Save"}
+                      {isSavingAlt ? (
+                        <>
+                          <Spinner className="size-3.5" />
+                          Saving…
+                        </>
+                      ) : (
+                        "Save"
+                      )}
                     </Button>
                   ) : null}
                 </div>
@@ -482,8 +498,11 @@ export function MediaLibraryPage() {
                   setDeleting(null);
                   setPreviewing(null);
                   await load();
+                  toast.success("Asset deleted");
                 } catch (err) {
-                  setError(getApiErrorMessage(err, "Unable to delete asset."));
+                  const msg = getApiErrorMessage(err, "Unable to delete asset.");
+                  setError(msg);
+                  toast.error(msg);
                 } finally {
                   setIsDeleting(false);
                 }

@@ -384,3 +384,253 @@ describe('Content entries — revisions & restore', () => {
     expect(remainingVersions.every((v) => v <= 2)).toBe(true)
   })
 })
+
+/* ────────────────────────────────────────────────────────────── */
+/* GROUP fields — components / repeatable sub-schemas             */
+/* ────────────────────────────────────────────────────────────── */
+
+const seedGallerySchema = async () => {
+  const u = await createAuthedUser()
+  const site = await createSite(u.accessToken)
+  const ct = await createContentType(u.accessToken, site.id, { name: 'Page' })
+  // A GROUP field "gallery" that holds title + description + list of
+  // { caption, image } items. Mirrors the LSP MICE pilot use case.
+  const groupField = await api<{ field: { id: string; apiId: string } }>(
+    `/sites/${site.id}/content-types/${ct.id}/fields`,
+    {
+      method: 'POST',
+      token: u.accessToken,
+      body: {
+        label: 'Gallery',
+        type: 'GROUP',
+        isList: true,
+        config: {
+          children: [
+            { apiId: 'title', label: 'Title', type: 'TEXT', required: true },
+            { apiId: 'description', label: 'Description', type: 'TEXT' },
+            { apiId: 'caption', label: 'Caption', type: 'TEXT' }
+          ]
+        }
+      }
+    }
+  )
+  if (groupField.status !== 201) {
+    throw new Error(
+      `seedGallerySchema failed: ${groupField.status} ${JSON.stringify(groupField.body)}`
+    )
+  }
+  return { user: u, site, contentType: ct }
+}
+
+describe('GROUP field — schema', () => {
+  test('rejects GROUP creation without config.children', async () => {
+    const u = await createAuthedUser()
+    const site = await createSite(u.accessToken)
+    const ct = await createContentType(u.accessToken, site.id)
+    const res = await api(`/sites/${site.id}/content-types/${ct.id}/fields`, {
+      method: 'POST',
+      token: u.accessToken,
+      body: { label: 'Empty group', type: 'GROUP' }
+    })
+    expect(res.status).toBe(400)
+  })
+
+  test('rejects more than 5 children', async () => {
+    const u = await createAuthedUser()
+    const site = await createSite(u.accessToken)
+    const ct = await createContentType(u.accessToken, site.id)
+    const res = await api(`/sites/${site.id}/content-types/${ct.id}/fields`, {
+      method: 'POST',
+      token: u.accessToken,
+      body: {
+        label: 'Too many',
+        type: 'GROUP',
+        config: {
+          children: [
+            { apiId: 'a', label: 'A', type: 'TEXT' },
+            { apiId: 'b', label: 'B', type: 'TEXT' },
+            { apiId: 'c', label: 'C', type: 'TEXT' },
+            { apiId: 'd', label: 'D', type: 'TEXT' },
+            { apiId: 'e', label: 'E', type: 'TEXT' },
+            { apiId: 'f', label: 'F', type: 'TEXT' }
+          ]
+        }
+      }
+    })
+    expect(res.status).toBe(400)
+  })
+
+  test('rejects nested GROUP (2-level cap)', async () => {
+    const u = await createAuthedUser()
+    const site = await createSite(u.accessToken)
+    const ct = await createContentType(u.accessToken, site.id)
+    const res = await api(`/sites/${site.id}/content-types/${ct.id}/fields`, {
+      method: 'POST',
+      token: u.accessToken,
+      body: {
+        label: 'Nested',
+        type: 'GROUP',
+        config: {
+          children: [
+            {
+              apiId: 'inner',
+              label: 'Inner',
+              type: 'GROUP',
+              config: {
+                children: [{ apiId: 'x', label: 'X', type: 'TEXT' }]
+              }
+            }
+          ]
+        }
+      }
+    })
+    expect(res.status).toBe(400)
+  })
+
+  test('rejects duplicate apiId within children', async () => {
+    const u = await createAuthedUser()
+    const site = await createSite(u.accessToken)
+    const ct = await createContentType(u.accessToken, site.id)
+    const res = await api(`/sites/${site.id}/content-types/${ct.id}/fields`, {
+      method: 'POST',
+      token: u.accessToken,
+      body: {
+        label: 'Dup',
+        type: 'GROUP',
+        config: {
+          children: [
+            { apiId: 'a', label: 'A', type: 'TEXT' },
+            { apiId: 'a', label: 'A2', type: 'TEXT' }
+          ]
+        }
+      }
+    })
+    expect(res.status).toBe(400)
+  })
+
+  test('accepts valid GROUP with mixed child types', async () => {
+    const u = await createAuthedUser()
+    const site = await createSite(u.accessToken)
+    const ct = await createContentType(u.accessToken, site.id)
+    const res = await api<{ field: { id: string } }>(
+      `/sites/${site.id}/content-types/${ct.id}/fields`,
+      {
+        method: 'POST',
+        token: u.accessToken,
+        body: {
+          label: 'Gallery',
+          type: 'GROUP',
+          isList: true,
+          config: {
+            children: [
+              { apiId: 'title', label: 'Title', type: 'TEXT', required: true },
+              { apiId: 'caption', label: 'Caption', type: 'TEXT' }
+            ]
+          }
+        }
+      }
+    )
+    expect(res.status).toBe(201)
+    expect(res.body.data?.field.id).toBeTruthy()
+  })
+})
+
+describe('GROUP field — entry data', () => {
+  test('happy: list-group entry stores array of objects', async () => {
+    const { user, site, contentType } = await seedGallerySchema()
+    const res = await api<EntryWrap>(
+      `/sites/${site.id}/content-types/${contentType.id}/entries`,
+      {
+        method: 'POST',
+        token: user.accessToken,
+        body: {
+          data: {
+            gallery: [
+              {
+                title: 'Section A',
+                description: 'first',
+                caption: 'photo1'
+              },
+              { title: 'Section B', caption: 'photo2' }
+            ]
+          }
+        }
+      }
+    )
+    expect(res.status).toBe(201)
+    const gallery = res.body.data?.entry.data.gallery as unknown[]
+    expect(Array.isArray(gallery)).toBe(true)
+    expect(gallery.length).toBe(2)
+    expect((gallery[0] as Record<string, unknown>).title).toBe('Section A')
+  })
+
+  test('rejects entry where required child is missing inside an item', async () => {
+    const { user, site, contentType } = await seedGallerySchema()
+    const res = await api(
+      `/sites/${site.id}/content-types/${contentType.id}/entries`,
+      {
+        method: 'POST',
+        token: user.accessToken,
+        body: {
+          data: {
+            gallery: [{ caption: 'orphan' }] // missing required title
+          }
+        }
+      }
+    )
+    expect(res.status).toBe(400)
+    expect((res.body.issues ?? []).some((m) => m.includes('title'))).toBe(true)
+  })
+
+  test('no-op save with same group data does not bump version', async () => {
+    const { user, site, contentType } = await seedGallerySchema()
+    const created = await api<EntryWrap>(
+      `/sites/${site.id}/content-types/${contentType.id}/entries`,
+      {
+        method: 'POST',
+        token: user.accessToken,
+        body: {
+          data: {
+            gallery: [{ title: 'Hello', description: null, caption: 'cap' }]
+          }
+        }
+      }
+    )
+    const entryId = created.body.data!.entry.id
+    const noop = await api<EntryWrap>(
+      `/sites/${site.id}/content-types/${contentType.id}/entries/${entryId}`,
+      {
+        method: 'PATCH',
+        token: user.accessToken,
+        body: {
+          data: {
+            gallery: [{ title: 'Hello', description: null, caption: 'cap' }]
+          }
+        }
+      }
+    )
+    expect(noop.body.data?.entry.version).toBe(1)
+  })
+
+  test('change to a child value bumps version once', async () => {
+    const { user, site, contentType } = await seedGallerySchema()
+    const created = await api<EntryWrap>(
+      `/sites/${site.id}/content-types/${contentType.id}/entries`,
+      {
+        method: 'POST',
+        token: user.accessToken,
+        body: { data: { gallery: [{ title: 'Hello' }] } }
+      }
+    )
+    const entryId = created.body.data!.entry.id
+    const patched = await api<EntryWrap>(
+      `/sites/${site.id}/content-types/${contentType.id}/entries/${entryId}`,
+      {
+        method: 'PATCH',
+        token: user.accessToken,
+        body: { data: { gallery: [{ title: 'Hello world' }] } }
+      }
+    )
+    expect(patched.body.data?.entry.version).toBe(2)
+  })
+})

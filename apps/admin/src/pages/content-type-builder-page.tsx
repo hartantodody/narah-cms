@@ -610,6 +610,10 @@ export function ContentTypeBuilderPage() {
                           <p className="text-sm leading-6 text-muted-foreground">
                             {field.description || t("schema.builder.fields.noDescription")}
                           </p>
+
+                          {field.type === "GROUP" ? (
+                            <GroupChildrenPreview field={field} />
+                          ) : null}
                         </div>
 
                         <div className="flex flex-wrap gap-2">
@@ -778,6 +782,63 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
     <div className="flex items-center justify-between rounded-lg border border-border/50 bg-card/50 px-3 py-2">
       <span className="text-xs text-muted-foreground">{label}</span>
       <span className="text-xs font-mono font-medium">{value}</span>
+    </div>
+  );
+}
+
+/**
+ * Read-only summary of a GROUP field's children, rendered under the
+ * field card in the schema builder. Surfaces the nested schema without
+ * requiring the user to open the field dialog just to peek.
+ */
+function GroupChildrenPreview({ field }: { field: ContentField }) {
+  const children =
+    field.config && Array.isArray((field.config as { children?: unknown }).children)
+      ? ((field.config as { children: unknown[] }).children.filter(
+          (c): c is Record<string, unknown> =>
+            c !== null && typeof c === "object",
+        ) as Array<Record<string, unknown>>)
+      : [];
+
+  if (children.length === 0) {
+    return (
+      <p className="rounded-md border border-dashed border-border/60 bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+        No child fields defined.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-1 rounded-md border border-border/60 bg-muted/30 p-2.5">
+      <p className="font-mono text-[0.6rem] uppercase tracking-wider text-muted-foreground">
+        Children · {children.length}
+      </p>
+      <ul className="space-y-1">
+        {children.map((child, i) => (
+          <li
+            key={`${typeof child.apiId === "string" ? child.apiId : i}`}
+            className="flex flex-wrap items-center gap-2 text-xs"
+          >
+            <span className="font-medium">
+              {typeof child.label === "string" ? child.label : "—"}
+            </span>
+            <span className="font-mono text-[0.65rem] text-muted-foreground">
+              {typeof child.apiId === "string" ? child.apiId : "?"}
+            </span>
+            <span className="font-mono text-[0.6rem] uppercase tracking-wider text-muted-foreground">
+              {typeof child.type === "string"
+                ? child.type.replaceAll("_", " ").toLowerCase()
+                : "?"}
+              {child.isList ? " · list" : ""}
+            </span>
+            {child.required ? (
+              <span className="font-mono text-[0.6rem] uppercase tracking-wider text-(--narah-accent)">
+                required
+              </span>
+            ) : null}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

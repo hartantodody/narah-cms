@@ -36,6 +36,8 @@ export function getContentFieldTypeBadgeClassName(type: ContentFieldType) {
     case "SELECT":
     case "MULTI_SELECT":
       return "border-border/80 bg-background/50 text-muted-foreground";
+    case "GROUP":
+      return "border-(--narah-accent)/40 bg-(--narah-accent)/10 text-(--narah-accent)";
     default:
       return "";
   }

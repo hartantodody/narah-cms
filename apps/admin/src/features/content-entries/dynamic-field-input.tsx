@@ -21,7 +21,50 @@ import {
   RelationPicker,
   type RelationPickerSelection,
 } from "@/features/content-entries/relation-picker";
-import type { ContentField } from "@/features/content-types/content-type.types";
+import type {
+  ContentField,
+  GroupChildFieldDef,
+} from "@/features/content-types/content-type.types";
+
+/**
+ * Materialize a GROUP child field def (subset of ContentField stored in
+ * config.children) as a full ContentField shape so we can hand it to
+ * DynamicFieldInput. The synthetic id namespaces the parent so React
+ * key uniqueness holds when multiple groups share child apiIds.
+ */
+const groupChildToContentField = (
+  parent: ContentField,
+  child: GroupChildFieldDef,
+  childIndex: number,
+): ContentField => ({
+  id: `${parent.id}.${child.apiId}.${childIndex}`,
+  label: child.label,
+  apiId: child.apiId,
+  type: child.type,
+  description: child.description ?? null,
+  required: child.required === true,
+  localized: false,
+  isList: child.isList === true,
+  sortOrder: childIndex,
+  config: child.config ?? null,
+  validation: null,
+  defaultValue: null,
+  createdAt: parent.createdAt,
+  updatedAt: parent.updatedAt,
+});
+
+const getGroupChildren = (field: ContentField): GroupChildFieldDef[] => {
+  if (field.type !== "GROUP" || !field.config) return [];
+  const raw = (field.config as { children?: unknown }).children;
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(
+    (c): c is GroupChildFieldDef =>
+      c !== null &&
+      typeof c === "object" &&
+      typeof (c as { apiId?: unknown }).apiId === "string" &&
+      typeof (c as { type?: unknown }).type === "string",
+  );
+};
 
 export type FieldOption = { label: string; value: string };
 
@@ -340,9 +383,75 @@ function ScalarControl({
         />
       );
     }
+    case "GROUP": {
+      return (
+        <GroupControl
+          field={field}
+          value={value}
+          onChange={onChange}
+          disabled={disabled}
+          siteId={siteId}
+        />
+      );
+    }
     default:
       return null;
   }
+}
+
+/**
+ * Render one group item (singleton or one element of a list-group) as a
+ * stacked card of inputs — one DynamicFieldInput per declared child.
+ */
+function GroupControl({
+  field,
+  value,
+  onChange,
+  disabled,
+  siteId,
+}: {
+  field: ContentField;
+  value: unknown;
+  onChange: (v: unknown) => void;
+  disabled?: boolean;
+  siteId: string;
+}) {
+  const children = getGroupChildren(field);
+  const item =
+    value && typeof value === "object" && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : {};
+
+  if (children.length === 0) {
+    return (
+      <p className="rounded-md border border-dashed border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+        This group has no child fields defined. Open the schema editor and add
+        at least one child.
+      </p>
+    );
+  }
+
+  const setChild = (apiId: string, next: unknown) => {
+    onChange({ ...item, [apiId]: next });
+  };
+
+  return (
+    <div className="space-y-3 rounded-lg border border-border bg-muted/40 p-3">
+      {children.map((child, idx) => {
+        const childField = groupChildToContentField(field, child, idx);
+        return (
+          <DynamicFieldInput
+            key={child.apiId}
+            field={childField}
+            value={item[child.apiId]}
+            onChange={(next) => setChild(child.apiId, next)}
+            disabled={disabled}
+            siteId={siteId}
+          />
+        );
+      })}
+    </div>
+  );
 }
 
 function ListControl({
@@ -721,6 +830,8 @@ const defaultForType = (type: ContentField["type"]) => {
       return null;
     case "JSON":
       return null;
+    case "GROUP":
+      return {};
     default:
       return "";
   }
