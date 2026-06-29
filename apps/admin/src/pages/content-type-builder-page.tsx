@@ -5,15 +5,25 @@ import {
   ArrowUp,
   BadgeCheck,
   Braces,
+  Calendar,
+  CalendarClock,
+  CheckSquare2,
   Code2,
   Edit3,
   FileText,
+  Hash,
+  Image as ImageIcon,
   Info,
+  Layers,
   Layers3,
+  Link2,
+  List as ListIcon,
+  ListChecks,
   ListTree,
   Plus,
   SlidersHorizontal,
   Trash2,
+  Type as TypeIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -562,112 +572,23 @@ export function ContentTypeBuilderPage() {
                   ) : null}
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="divide-y divide-border/60 overflow-hidden rounded-xl border border-border/60 bg-card/50">
                   {contentType.fields.map((field, index) => (
-                    <div
+                    <FieldRow
                       key={field.id}
-                      className="rounded-xl border border-border/60 bg-card/50 p-4"
-                    >
-                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="space-y-3">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-medium">{field.label}</p>
-                            <Badge
-                              variant="outline"
-                              className={getContentFieldTypeBadgeClassName(field.type)}
-                            >
-                              {formatContentFieldType(field.type)}
-                            </Badge>
-                            {field.required ? (
-                              <Badge className="border-transparent bg-(--narah-accent)/15 font-mono text-[0.6rem] uppercase tracking-wider text-(--narah-accent)">
-                                {t("schema.builder.fields.badges.required")}
-                              </Badge>
-                            ) : null}
-                            {field.localized ? (
-                              <Badge
-                                variant="outline"
-                                className="border-[var(--narah-border-strong)] bg-white/[0.03] text-[var(--narah-primary-soft)]"
-                              >
-                                {t("schema.builder.fields.badges.localized")}
-                              </Badge>
-                            ) : null}
-                            {field.isList ? (
-                              <Badge
-                                variant="outline"
-                                className="border-border/80 bg-background/60 text-muted-foreground"
-                              >
-                                {t("schema.builder.fields.badges.list")}
-                              </Badge>
-                            ) : null}
-                          </div>
-
-                          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                            <span>{t("schema.builder.fields.apiIdLabel")}: {field.apiId}</span>
-                            <span>{t("schema.builder.fields.orderLabel")}: {field.sortOrder + 1}</span>
-                            <span>{t("schema.builder.fields.updatedLabel")}: {formatSiteDate(field.updatedAt)}</span>
-                          </div>
-
-                          <p className="text-sm leading-6 text-muted-foreground">
-                            {field.description || t("schema.builder.fields.noDescription")}
-                          </p>
-
-                          {field.type === "GROUP" ? (
-                            <GroupChildrenPreview field={field} />
-                          ) : null}
-                        </div>
-
-                        <div className="flex flex-wrap gap-2">
-                          {canManage ? (
-                            <>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="rounded-xl border-border/80 bg-background/60 hover:bg-background/80"
-                                onClick={() => void handleMoveField(field.id, -1)}
-                                disabled={index === 0 || reorderingFieldId === field.id}
-                              >
-                                <ArrowUp className="size-4" />
-                                {t("schema.builder.fields.actions.up")}
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="rounded-xl border-border/80 bg-background/60 hover:bg-background/80"
-                                onClick={() => void handleMoveField(field.id, 1)}
-                                disabled={
-                                  index === contentType.fields.length - 1 ||
-                                  reorderingFieldId === field.id
-                                }
-                              >
-                                <ArrowDown className="size-4" />
-                                {t("schema.builder.fields.actions.down")}
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="rounded-xl border-border/80 bg-background/60 hover:bg-background/80"
-                                onClick={() => {
-                                  setEditingField(field);
-                                  setIsFieldDialogOpen(true);
-                                }}
-                              >
-                                <Edit3 className="size-4" />
-                                {t("schema.builder.fields.actions.edit")}
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                className="rounded-xl"
-                                onClick={() => setDeletingField(field)}
-                              >
-                                <Trash2 className="size-4" />
-                                {t("schema.builder.fields.actions.delete")}
-                              </Button>
-                            </>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
+                      field={field}
+                      isFirst={index === 0}
+                      isLast={index === contentType.fields.length - 1}
+                      isReordering={reorderingFieldId === field.id}
+                      canManage={canManage}
+                      onMoveUp={() => void handleMoveField(field.id, -1)}
+                      onMoveDown={() => void handleMoveField(field.id, 1)}
+                      onEdit={() => {
+                        setEditingField(field);
+                        setIsFieldDialogOpen(true);
+                      }}
+                      onDelete={() => setDeletingField(field)}
+                    />
                   ))}
                 </div>
               )}
@@ -786,12 +707,162 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-/**
- * Read-only summary of a GROUP field's children, rendered under the
- * field card in the schema builder. Surfaces the nested schema without
- * requiring the user to open the field dialog just to peek.
- */
-function GroupChildrenPreview({ field }: { field: ContentField }) {
+/* ────────────────────────────────────────────────────────────────────── */
+/*  Compact field row — one line per field with optional children below   */
+/* ────────────────────────────────────────────────────────────────────── */
+
+const fieldTypeIcon = (type: ContentField["type"]) => {
+  switch (type) {
+    case "TEXT":
+      return TypeIcon;
+    case "RICH_TEXT":
+      return FileText;
+    case "NUMBER":
+      return Hash;
+    case "BOOLEAN":
+      return CheckSquare2;
+    case "DATE":
+      return Calendar;
+    case "DATETIME":
+      return CalendarClock;
+    case "MEDIA":
+      return ImageIcon;
+    case "JSON":
+      return Braces;
+    case "SELECT":
+      return ListIcon;
+    case "MULTI_SELECT":
+      return ListChecks;
+    case "RELATION":
+      return Link2;
+    case "GROUP":
+      return Layers;
+    default:
+      return TypeIcon;
+  }
+};
+
+function FieldRow({
+  field,
+  isFirst,
+  isLast,
+  isReordering,
+  canManage,
+  onMoveUp,
+  onMoveDown,
+  onEdit,
+  onDelete,
+}: {
+  field: ContentField;
+  isFirst: boolean;
+  isLast: boolean;
+  isReordering: boolean;
+  canManage: boolean;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const { t } = useTranslation();
+  const Icon = fieldTypeIcon(field.type);
+  const isGroup = field.type === "GROUP";
+
+  return (
+    <div className="px-3 py-2.5 transition-colors hover:bg-muted/30">
+      <div className="flex items-center gap-3">
+        <div className="grid size-8 shrink-0 place-items-center rounded-md border border-border/60 bg-background/60 text-muted-foreground">
+          <Icon className="size-4" />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <p className="text-sm font-medium leading-none">{field.label}</p>
+            <span className="font-mono text-[0.65rem] text-muted-foreground">
+              {field.apiId}
+            </span>
+            <span
+              className={
+                "rounded px-1.5 py-0.5 font-mono text-[0.6rem] uppercase tracking-wider " +
+                getContentFieldTypeBadgeClassName(field.type)
+              }
+            >
+              {formatContentFieldType(field.type)}
+            </span>
+            {field.required ? (
+              <span className="rounded bg-(--narah-accent)/15 px-1.5 py-0.5 font-mono text-[0.6rem] uppercase tracking-wider text-(--narah-accent)">
+                {t("schema.builder.fields.badges.required")}
+              </span>
+            ) : null}
+            {field.isList ? (
+              <span className="rounded border border-border/60 bg-background/60 px-1.5 py-0.5 font-mono text-[0.6rem] uppercase tracking-wider text-muted-foreground">
+                {t("schema.builder.fields.badges.list")}
+              </span>
+            ) : null}
+            {field.localized ? (
+              <span className="rounded border border-(--narah-border-strong) bg-white/3 px-1.5 py-0.5 font-mono text-[0.6rem] uppercase tracking-wider text-(--narah-primary-soft)">
+                {t("schema.builder.fields.badges.localized")}
+              </span>
+            ) : null}
+          </div>
+          {field.description ? (
+            <p className="mt-1 truncate text-xs text-muted-foreground">
+              {field.description}
+            </p>
+          ) : null}
+        </div>
+
+        {canManage ? (
+          <div className="flex shrink-0 items-center gap-0.5">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={onMoveUp}
+              disabled={isFirst || isReordering}
+              aria-label={t("schema.builder.fields.actions.up")}
+            >
+              <ArrowUp className="size-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={onMoveDown}
+              disabled={isLast || isReordering}
+              aria-label={t("schema.builder.fields.actions.down")}
+            >
+              <ArrowDown className="size-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={onEdit}
+              aria-label={t("schema.builder.fields.actions.edit")}
+            >
+              <Edit3 className="size-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={onDelete}
+              className="text-muted-foreground hover:text-destructive"
+              aria-label={t("schema.builder.fields.actions.delete")}
+            >
+              <Trash2 className="size-3.5" />
+            </Button>
+          </div>
+        ) : null}
+      </div>
+
+      {isGroup ? (
+        <div className="mt-2 ml-11">
+          <GroupChildrenInline field={field} />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** Compact inline preview of GROUP children — single bullet-list style. */
+function GroupChildrenInline({ field }: { field: ContentField }) {
   const children =
     field.config && Array.isArray((field.config as { children?: unknown }).children)
       ? ((field.config as { children: unknown[] }).children.filter(
@@ -802,43 +873,48 @@ function GroupChildrenPreview({ field }: { field: ContentField }) {
 
   if (children.length === 0) {
     return (
-      <p className="rounded-md border border-dashed border-border/60 bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+      <p className="text-[0.7rem] italic text-muted-foreground">
         No child fields defined.
       </p>
     );
   }
 
   return (
-    <div className="space-y-1 rounded-md border border-border/60 bg-muted/30 p-2.5">
-      <p className="font-mono text-[0.6rem] uppercase tracking-wider text-muted-foreground">
-        Children · {children.length}
-      </p>
-      <ul className="space-y-1">
-        {children.map((child, i) => (
+    <ul className="space-y-0.5">
+      {children.map((child, i) => {
+        const childType = (typeof child.type === "string" ? child.type : "?") as
+          | ContentField["type"]
+          | "?";
+        const ChildIcon =
+          childType !== "?" ? fieldTypeIcon(childType as ContentField["type"]) : null;
+        return (
           <li
             key={`${typeof child.apiId === "string" ? child.apiId : i}`}
-            className="flex flex-wrap items-center gap-2 text-xs"
+            className="flex items-center gap-2 text-[0.7rem] text-muted-foreground"
           >
-            <span className="font-medium">
+            <span className="text-muted-foreground/60">└</span>
+            {ChildIcon ? <ChildIcon className="size-3" /> : null}
+            <span className="font-medium text-foreground">
               {typeof child.label === "string" ? child.label : "—"}
             </span>
-            <span className="font-mono text-[0.65rem] text-muted-foreground">
+            <span className="font-mono text-[0.6rem]">
               {typeof child.apiId === "string" ? child.apiId : "?"}
             </span>
-            <span className="font-mono text-[0.6rem] uppercase tracking-wider text-muted-foreground">
+            <span className="font-mono text-[0.55rem] uppercase tracking-wider">
               {typeof child.type === "string"
                 ? child.type.replaceAll("_", " ").toLowerCase()
                 : "?"}
               {child.isList ? " · list" : ""}
             </span>
             {child.required ? (
-              <span className="font-mono text-[0.6rem] uppercase tracking-wider text-(--narah-accent)">
-                required
+              <span className="font-mono text-[0.55rem] uppercase tracking-wider text-(--narah-accent)">
+                req
               </span>
             ) : null}
           </li>
-        ))}
-      </ul>
-    </div>
+        );
+      })}
+    </ul>
   );
 }
+
