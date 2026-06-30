@@ -8,6 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NarahLogo } from "@/components/app/brand";
 import { SoftAurora } from "@/components/app/soft-aurora";
 import { TypingText } from "@/components/app/typing-text";
 import { getApiErrorMessage } from "@/lib/api";
@@ -82,7 +83,7 @@ export function RegisterPage() {
       {/* Top brand row */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between px-6 py-6 sm:px-10">
         <div className="pointer-events-auto flex items-center gap-2.5">
-          <NarahMark />
+          <NarahLogo className="size-7 rounded-md" />
           <span className="font-mono text-[0.7rem] uppercase tracking-[0.22em] text-white/55">
             narah / cms
           </span>
@@ -240,10 +241,3 @@ const FormField = ({ id, label, error, type, autoComplete, placeholder, ...rest 
   </div>
 );
 
-const NarahMark = () => (
-  <span className="grid size-7 place-items-center rounded-md bg-white text-black" aria-hidden>
-    <svg viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 20V4l16 16V4" />
-    </svg>
-  </span>
-);

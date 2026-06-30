@@ -55,6 +55,7 @@ import {
   getContentType,
   reorderContentFields,
 } from "@/features/content-types/content-type.api";
+import { DynamicFieldInput } from "@/features/content-entries/dynamic-field-input";
 import { SchemaCodeEditor } from "@/features/content-types/schema-code-editor";
 import type {
   ContentField,
@@ -582,6 +583,7 @@ export function ContentTypeBuilderPage() {
                     <FieldRow
                       key={field.id}
                       field={field}
+                      siteId={siteId}
                       isFirst={index === 0}
                       isLast={index === contentType.fields.length - 1}
                       isReordering={reorderingFieldId === field.id}
@@ -782,8 +784,15 @@ const fieldTypeIcon = (type: ContentField["type"]) => {
   }
 };
 
+/**
+ * Schema field "row" — actually a live WYSIWYG preview of how the field
+ * will render in the entry editor. Reuses DynamicFieldInput in disabled
+ * mode so what editors design is exactly what content creators see.
+ * Floating action toolbar appears on hover/focus in the top-right corner.
+ */
 function FieldRow({
   field,
+  siteId,
   isFirst,
   isLast,
   isReordering,
@@ -794,6 +803,7 @@ function FieldRow({
   onDelete,
 }: {
   field: ContentField;
+  siteId: string;
   isFirst: boolean;
   isLast: boolean;
   isReordering: boolean;
@@ -805,156 +815,80 @@ function FieldRow({
 }) {
   const { t } = useTranslation();
   const Icon = fieldTypeIcon(field.type);
-  const isGroup = field.type === "GROUP";
+  const typeLabel = formatContentFieldType(field.type);
 
   return (
-    <div className="px-3 py-2.5 transition-colors hover:bg-muted/30">
-      <div className="flex items-center gap-3">
-        <div className="grid size-8 shrink-0 place-items-center rounded-md border border-border/60 bg-background/60 text-muted-foreground">
-          <Icon className="size-4" />
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <p className="text-sm font-medium leading-none">{field.label}</p>
-            <span className="font-mono text-[0.65rem] text-muted-foreground">
-              {field.apiId}
-            </span>
-            <span
-              className={
-                "rounded px-1.5 py-0.5 font-mono text-[0.6rem] uppercase tracking-wider " +
-                getContentFieldTypeBadgeClassName(field.type)
-              }
-            >
-              {formatContentFieldType(field.type)}
-            </span>
-            {field.required ? (
-              <span className="rounded bg-(--narah-accent)/15 px-1.5 py-0.5 font-mono text-[0.6rem] uppercase tracking-wider text-(--narah-accent)">
-                {t("schema.builder.fields.badges.required")}
-              </span>
-            ) : null}
-            {field.isList ? (
-              <span className="rounded border border-border/60 bg-background/60 px-1.5 py-0.5 font-mono text-[0.6rem] uppercase tracking-wider text-muted-foreground">
-                {t("schema.builder.fields.badges.list")}
-              </span>
-            ) : null}
-            {field.localized ? (
-              <span className="rounded border border-(--narah-border-strong) bg-white/3 px-1.5 py-0.5 font-mono text-[0.6rem] uppercase tracking-wider text-(--narah-primary-soft)">
-                {t("schema.builder.fields.badges.localized")}
-              </span>
-            ) : null}
-          </div>
-          {field.description ? (
-            <p className="mt-1 truncate text-xs text-muted-foreground">
-              {field.description}
-            </p>
-          ) : null}
-        </div>
-
-        {canManage ? (
-          <div className="flex shrink-0 items-center gap-0.5">
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={onMoveUp}
-              disabled={isFirst || isReordering}
-              aria-label={t("schema.builder.fields.actions.up")}
-            >
-              <ArrowUp className="size-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={onMoveDown}
-              disabled={isLast || isReordering}
-              aria-label={t("schema.builder.fields.actions.down")}
-            >
-              <ArrowDown className="size-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={onEdit}
-              aria-label={t("schema.builder.fields.actions.edit")}
-            >
-              <Edit3 className="size-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={onDelete}
-              className="text-muted-foreground hover:text-destructive"
-              aria-label={t("schema.builder.fields.actions.delete")}
-            >
-              <Trash2 className="size-3.5" />
-            </Button>
-          </div>
-        ) : null}
+    <div className="group relative px-4 py-4 transition-colors hover:bg-muted/20">
+      {/* Type chip — small, top-right, never overlapping content. */}
+      <div className="pointer-events-none absolute right-3 top-3 z-0 flex items-center gap-1">
+        <span
+          className={
+            "inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[0.6rem] uppercase tracking-wider " +
+            getContentFieldTypeBadgeClassName(field.type)
+          }
+        >
+          <Icon className="size-3" />
+          {typeLabel}
+          {field.isList ? " · list" : ""}
+        </span>
       </div>
 
-      {isGroup ? (
-        <div className="mt-2 ml-11">
-          <GroupChildrenInline field={field} />
+      {/* Live preview of the field — same component editors use, disabled.
+          For repeatable groups we inject one empty item so the child shape
+          is visible; otherwise editors would just see "No items yet". */}
+      <div className="pointer-events-none pr-28 opacity-90">
+        <DynamicFieldInput
+          field={field}
+          value={
+            field.type === "GROUP" && field.isList ? [{}] : undefined
+          }
+          onChange={() => {}}
+          disabled
+          siteId={siteId}
+        />
+      </div>
+
+      {/* Floating action toolbar — appears on hover, sits above type chip. */}
+      {canManage ? (
+        <div className="absolute right-3 top-3 z-10 flex items-center gap-0.5 rounded-md border border-border/60 bg-background/95 p-0.5 opacity-0 shadow-sm backdrop-blur-sm transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={onMoveUp}
+            disabled={isFirst || isReordering}
+            aria-label={t("schema.builder.fields.actions.up")}
+          >
+            <ArrowUp className="size-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={onMoveDown}
+            disabled={isLast || isReordering}
+            aria-label={t("schema.builder.fields.actions.down")}
+          >
+            <ArrowDown className="size-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={onEdit}
+            aria-label={t("schema.builder.fields.actions.edit")}
+          >
+            <Edit3 className="size-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={onDelete}
+            className="text-muted-foreground hover:text-destructive"
+            aria-label={t("schema.builder.fields.actions.delete")}
+          >
+            <Trash2 className="size-3.5" />
+          </Button>
         </div>
       ) : null}
     </div>
-  );
-}
-
-/** Compact inline preview of GROUP children — single bullet-list style. */
-function GroupChildrenInline({ field }: { field: ContentField }) {
-  const children =
-    field.config && Array.isArray((field.config as { children?: unknown }).children)
-      ? ((field.config as { children: unknown[] }).children.filter(
-          (c): c is Record<string, unknown> =>
-            c !== null && typeof c === "object",
-        ) as Array<Record<string, unknown>>)
-      : [];
-
-  if (children.length === 0) {
-    return (
-      <p className="text-[0.7rem] italic text-muted-foreground">
-        No child fields defined.
-      </p>
-    );
-  }
-
-  return (
-    <ul className="space-y-0.5">
-      {children.map((child, i) => {
-        const childType = (typeof child.type === "string" ? child.type : "?") as
-          | ContentField["type"]
-          | "?";
-        const ChildIcon =
-          childType !== "?" ? fieldTypeIcon(childType as ContentField["type"]) : null;
-        return (
-          <li
-            key={`${typeof child.apiId === "string" ? child.apiId : i}`}
-            className="flex items-center gap-2 text-[0.7rem] text-muted-foreground"
-          >
-            <span className="text-muted-foreground/60">└</span>
-            {ChildIcon ? <ChildIcon className="size-3" /> : null}
-            <span className="font-medium text-foreground">
-              {typeof child.label === "string" ? child.label : "—"}
-            </span>
-            <span className="font-mono text-[0.6rem]">
-              {typeof child.apiId === "string" ? child.apiId : "?"}
-            </span>
-            <span className="font-mono text-[0.55rem] uppercase tracking-wider">
-              {typeof child.type === "string"
-                ? child.type.replaceAll("_", " ").toLowerCase()
-                : "?"}
-              {child.isList ? " · list" : ""}
-            </span>
-            {child.required ? (
-              <span className="font-mono text-[0.55rem] uppercase tracking-wider text-(--narah-accent)">
-                req
-              </span>
-            ) : null}
-          </li>
-        );
-      })}
-    </ul>
   );
 }
 

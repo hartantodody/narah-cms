@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { NarahLogo } from "@/components/app/brand";
 import {
   Tooltip,
   TooltipContent,
@@ -105,7 +106,7 @@ export function AppRail({
             expanded ? "gap-2.5 px-4" : "justify-center",
           )}
         >
-          <NarahMark />
+          <NarahLogo className="size-7 shrink-0 rounded-md" />
           {expanded ? (
             <div className="flex items-baseline gap-1.5">
               <span className="text-sm font-semibold tracking-tight">Narah</span>
@@ -277,21 +278,3 @@ function RailLink({ item, expanded }: { item: RailItem; expanded: boolean }) {
   );
 }
 
-const NarahMark = () => (
-  <span
-    className="grid size-7 shrink-0 place-items-center rounded-md bg-foreground text-background"
-    aria-hidden
-  >
-    <svg
-      viewBox="0 0 24 24"
-      className="size-3.5"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M4 20V4l16 16V4" />
-    </svg>
-  </span>
-);

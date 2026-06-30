@@ -1,6 +1,7 @@
 import { Building2, LogOut, Plus, Search, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
+import { NarahLogo } from "@/components/app/brand";
 import { ThemeToggle } from "@/components/app/theme-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -57,7 +58,7 @@ export function SitePickerPage() {
       {/* Top bar */}
       <header className="flex h-14 items-center justify-between border-b border-border px-5">
         <div className="flex items-center gap-2.5">
-          <NarahMark />
+          <NarahLogo className="size-7 rounded-md" />
           <div className="flex items-baseline gap-1.5">
             <span className="text-sm font-semibold tracking-tight">Narah</span>
             <span className="font-mono text-[0.65rem] uppercase tracking-[0.18em] text-muted-foreground">
@@ -292,21 +293,3 @@ function RoleBadge({ role }: { role: SiteMembershipRole }) {
   );
 }
 
-const NarahMark = () => (
-  <span
-    className="grid size-7 place-items-center rounded-md bg-foreground text-background"
-    aria-hidden
-  >
-    <svg
-      viewBox="0 0 24 24"
-      className="size-3.5"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M4 20V4l16 16V4" />
-    </svg>
-  </span>
-);
