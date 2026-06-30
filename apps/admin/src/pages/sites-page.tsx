@@ -249,11 +249,11 @@ function SiteCard({
           </div>
           <Link
             to={base}
-            aria-label="Open site"
             title="Open site"
-            className="grid size-7 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground dark:hover:bg-white/5"
+            className="group/open inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-(--narah-accent)/40 bg-(--narah-accent)/15 px-2.5 py-1.5 text-xs font-semibold text-(--narah-accent) shadow-(--narah-shadow-xs) transition-all hover:-translate-y-px hover:border-(--narah-accent)/70 hover:bg-(--narah-accent)/25 hover:shadow-(--narah-shadow-sm)"
           >
-            <ArrowUpRight className="size-3.5" />
+            Open
+            <ArrowUpRight className="size-3.5 transition-transform group-hover/open:translate-x-0.5 group-hover/open:-translate-y-0.5" />
           </Link>
         </div>
 
@@ -407,9 +407,9 @@ function SiteDetail({
             <Link
               key={l.label}
               to={l.to}
-              className="group flex items-center gap-2 rounded-md border border-(--narah-accent)/25 bg-(--narah-accent)/8 px-2.5 py-1.5 text-xs font-medium text-foreground transition-all hover:-translate-y-px hover:border-(--narah-accent)/50 hover:bg-(--narah-accent)/15 hover:text-(--narah-accent)"
+              className="flex items-center gap-2 rounded-md border border-border/60 bg-foreground/3 px-2.5 py-1.5 text-xs text-foreground transition-colors hover:border-border hover:bg-foreground/8 dark:bg-white/3 dark:hover:bg-white/8"
             >
-              <l.icon className="size-3.5 text-(--narah-accent)" />
+              <l.icon className="size-3.5 text-muted-foreground" />
               <span className="truncate">{l.label}</span>
             </Link>
           ))}
