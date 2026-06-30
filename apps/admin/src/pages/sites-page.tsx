@@ -1,6 +1,5 @@
 import {
   AlertCircle,
-  Archive,
   ArrowUpRight,
   Building2,
   ChevronDown,
@@ -8,9 +7,9 @@ import {
   Image as ImageIcon,
   KeyRound,
   LayoutGrid,
-  Pencil,
   Plus,
   Search,
+  Settings,
   Shapes,
   Users,
 } from "lucide-react";
@@ -18,22 +17,12 @@ import { useDeferredValue, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { colorFromId, SiteAvatar } from "@/features/sites/site-avatar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { SiteFormDialog } from "@/features/sites/site-form-dialog";
-import { archiveSite, getSites } from "@/features/sites/site.api";
-import type { SiteDetail, SiteListItem } from "@/features/sites/site.types";
+import { getSites } from "@/features/sites/site.api";
+import type { SiteListItem } from "@/features/sites/site.types";
 import { formatSiteDate, formatSiteStatus } from "@/features/sites/site.utils";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/features/auth/auth-provider";
@@ -50,9 +39,6 @@ export function SitesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [editingSite, setEditingSite] = useState<SiteListItem | null>(null);
-  const [archiveTarget, setArchiveTarget] = useState<SiteListItem | null>(null);
-  const [isArchiving, setIsArchiving] = useState(false);
 
   useEffect(() => {
     let isActive = true;
@@ -87,27 +73,8 @@ export function SitesPage() {
     setSites(response.sites);
   };
 
-  const handleSiteSaved = async (_site: SiteDetail) => {
+  const handleSiteCreated = async () => {
     await refreshSites();
-    setEditingSite(null);
-  };
-
-  const handleArchive = async () => {
-    if (!archiveTarget) return;
-    setIsArchiving(true);
-    setErrorMessage(null);
-    try {
-      await archiveSite(archiveTarget.id);
-      await refreshSites();
-      setArchiveTarget(null);
-    } catch (error) {
-      if (isPolicyAcceptanceRequiredError(error)) return;
-      setErrorMessage(
-        getApiErrorMessage(error, "We couldn't archive this site right now."),
-      );
-    } finally {
-      setIsArchiving(false);
-    }
   };
 
   return (
@@ -169,8 +136,6 @@ export function SitesPage() {
           <MasonryGrid
             sites={sites}
             isSuperAdmin={Boolean(user?.isSuperAdmin)}
-            onEdit={setEditingSite}
-            onArchive={setArchiveTarget}
           />
         )}
       </div>
@@ -178,45 +143,8 @@ export function SitesPage() {
       <SiteFormDialog
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
-        onSuccess={handleSiteSaved}
+        onSuccess={handleSiteCreated}
       />
-
-      <SiteFormDialog
-        open={Boolean(editingSite)}
-        onOpenChange={(open) => {
-          if (!open) setEditingSite(null);
-        }}
-        site={editingSite}
-        onSuccess={handleSiteSaved}
-      />
-
-      <AlertDialog
-        open={Boolean(archiveTarget)}
-        onOpenChange={(open) => {
-          if (!open) setArchiveTarget(null);
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Archive this site?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {archiveTarget
-                ? `The site "${archiveTarget.name}" will be archived and hidden from the default list.`
-                : "This site will be archived and hidden from the default list."}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isArchiving}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              disabled={isArchiving}
-              onClick={handleArchive}
-            >
-              {isArchiving ? "Archiving…" : "Archive site"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }
@@ -253,13 +181,9 @@ function useColumnCount(): number {
 function MasonryGrid({
   sites,
   isSuperAdmin,
-  onEdit,
-  onArchive,
 }: {
   sites: SiteListItem[];
   isSuperAdmin: boolean;
-  onEdit: (s: SiteListItem) => void;
-  onArchive: (s: SiteListItem) => void;
 }) {
   const cols = useColumnCount();
 
@@ -281,8 +205,6 @@ function MasonryGrid({
               key={site.id}
               site={site}
               isSuperAdmin={isSuperAdmin}
-              onEdit={() => onEdit(site)}
-              onArchive={() => onArchive(site)}
             />
           ))}
         </div>
@@ -294,13 +216,9 @@ function MasonryGrid({
 function SiteCard({
   site,
   isSuperAdmin,
-  onEdit,
-  onArchive,
 }: {
   site: SiteListItem;
   isSuperAdmin: boolean;
-  onEdit: () => void;
-  onArchive: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const base = `/s/${site.id}`;
@@ -329,25 +247,14 @@ function SiteCard({
               /{site.slug}
             </p>
           </div>
-          <div className="flex shrink-0 items-center gap-1">
-            <button
-              type="button"
-              onClick={onEdit}
-              aria-label="Edit site"
-              title="Edit site"
-              className="grid size-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground dark:hover:bg-white/5"
-            >
-              <Pencil className="size-3.5" />
-            </button>
-            <Link
-              to={base}
-              aria-label="Open site"
-              title="Open site"
-              className="grid size-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground dark:hover:bg-white/5"
-            >
-              <ArrowUpRight className="size-3.5" />
-            </Link>
-          </div>
+          <Link
+            to={base}
+            aria-label="Open site"
+            title="Open site"
+            className="grid size-7 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground dark:hover:bg-white/5"
+          >
+            <ArrowUpRight className="size-3.5" />
+          </Link>
         </div>
 
         {/* Status row with subtle accent dot */}
@@ -435,7 +342,6 @@ function SiteCard({
               site={site}
               base={base}
               isSuperAdmin={isSuperAdmin}
-              onArchive={onArchive}
             />
           </div>
         </div>
@@ -452,12 +358,10 @@ function SiteDetail({
   site,
   base,
   isSuperAdmin,
-  onArchive,
 }: {
   site: SiteListItem;
   base: string;
   isSuperAdmin: boolean;
-  onArchive: () => void;
 }) {
   const quickLinks = [
     { label: "Overview", icon: LayoutGrid, to: base },
@@ -467,6 +371,12 @@ function SiteDetail({
     { label: "API Keys", icon: KeyRound, to: `${base}/api-keys` },
     { label: "Audit log", icon: History, to: `${base}/audit-log` },
   ];
+  // Settings (edit + archive) lives inside the site itself — surface it
+  // here so super admins know where to go after the card stopped carrying
+  // those actions directly.
+  if (isSuperAdmin) {
+    quickLinks.push({ label: "Settings", icon: Settings, to: `${base}/settings` });
+  }
 
   return (
     <div className="space-y-4">
@@ -497,27 +407,14 @@ function SiteDetail({
             <Link
               key={l.label}
               to={l.to}
-              className="flex items-center gap-2 rounded-md border border-border/40 bg-foreground/3 px-2.5 py-1.5 text-xs text-foreground transition-colors hover:bg-foreground/8 dark:bg-white/3 dark:hover:bg-white/8"
+              className="group flex items-center gap-2 rounded-md border border-(--narah-accent)/25 bg-(--narah-accent)/8 px-2.5 py-1.5 text-xs font-medium text-foreground transition-all hover:-translate-y-px hover:border-(--narah-accent)/50 hover:bg-(--narah-accent)/15 hover:text-(--narah-accent)"
             >
-              <l.icon className="size-3.5 text-muted-foreground" />
+              <l.icon className="size-3.5 text-(--narah-accent)" />
               <span className="truncate">{l.label}</span>
             </Link>
           ))}
         </div>
       </DetailSection>
-
-      {isSuperAdmin ? (
-        <DetailSection title="Danger">
-          <button
-            type="button"
-            onClick={onArchive}
-            className="flex w-full items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-2.5 py-1.5 text-xs text-destructive transition-colors hover:bg-destructive/20"
-          >
-            <Archive className="size-3.5" />
-            Archive site
-          </button>
-        </DetailSection>
-      ) : null}
     </div>
   );
 }
