@@ -56,6 +56,7 @@ import {
   reorderContentFields,
 } from "@/features/content-types/content-type.api";
 import { DynamicFieldInput } from "@/features/content-entries/dynamic-field-input";
+import { cn } from "@/lib/utils";
 import { SchemaCodeEditor } from "@/features/content-types/schema-code-editor";
 import type {
   ContentField,
@@ -429,24 +430,27 @@ export function ContentTypeBuilderPage() {
           </Alert>
         ) : null}
 
-        <Card className="rounded-2xl border border-border/70 bg-card/40 py-0">
-          <Tabs defaultValue="overview" className="gap-0">
-            <div className="border-b border-border/60 px-4 py-3">
-              <TabsList className="h-9">
-                <TabsTrigger value="overview" className="gap-1.5 px-3">
-                  <Info className="size-3.5" />
-                  {t("schema.builder.tabs.overview")}
-                </TabsTrigger>
-                <TabsTrigger value="visual" className="gap-1.5 px-3">
-                  <SlidersHorizontal className="size-3.5" />
-                  {t("schema.builder.tabs.visual")}
-                </TabsTrigger>
-                <TabsTrigger value="code" className="gap-1.5 px-3">
-                  <Braces className="size-3.5" />
-                  {t("schema.builder.tabs.code")}
-                </TabsTrigger>
-              </TabsList>
-            </div>
+        <Tabs defaultValue="overview" className="gap-0">
+          {/* Folder-style tabs that visually merge with the content card
+              below. The list sits 1px lower than its natural baseline so
+              the active tab's bottom edge paints over the card's top
+              border, giving the "tab is part of the container" effect. */}
+          <TabsList
+            variant="line"
+            className="relative z-10 -mb-px ml-4 flex h-auto items-end gap-1 rounded-none bg-transparent p-0"
+          >
+            <FolderTab value="overview" icon={<Info className="size-4" />}>
+              {t("schema.builder.tabs.overview")}
+            </FolderTab>
+            <FolderTab value="visual" icon={<SlidersHorizontal className="size-4" />}>
+              {t("schema.builder.tabs.visual")}
+            </FolderTab>
+            <FolderTab value="code" icon={<Braces className="size-4" />}>
+              {t("schema.builder.tabs.code")}
+            </FolderTab>
+          </TabsList>
+
+          <Card className="rounded-2xl rounded-tl-none border border-border/70 bg-card/40 py-0">
 
             <TabsContent value="overview" className="p-5">
               <div className="grid gap-4 lg:grid-cols-2">
@@ -615,8 +619,8 @@ export function ContentTypeBuilderPage() {
                 onApplied={(next) => setContentType(next)}
               />
             </TabsContent>
-          </Tabs>
-        </Card>
+          </Card>
+        </Tabs>
       </div>
 
       <ContentTypeFormDialog
@@ -737,6 +741,43 @@ export function ContentTypeBuilderPage() {
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+}
+
+/**
+ * Folder-style tab trigger. Renders as a small panel attached to the
+ * top of the content card — the active tab's bottom edge paints over
+ * the card's top border thanks to a -1px margin on the parent list +
+ * matching background color, so they read as a single shape.
+ */
+function FolderTab({
+  value,
+  icon,
+  children,
+}: {
+  value: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <TabsTrigger
+      value={value}
+      className={cn(
+        // Reset the shared TabsTrigger pill chrome.
+        "h-auto flex-none rounded-none rounded-t-lg border border-border/70 border-b-transparent bg-card/30 px-4 py-2 text-sm font-medium",
+        // Inactive state: muted text, hover lifts toward foreground.
+        "text-foreground/60 hover:bg-card/60 hover:text-foreground",
+        // Active state: solid card bg, accent text, bottom edge merges
+        // with the content card by matching its border color (so the
+        // shared 1px line disappears under it).
+        "data-active:bg-card/40 data-active:text-foreground data-active:shadow-none",
+        "data-active:border-border/70 data-active:border-b-card",
+        "focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none",
+      )}
+    >
+      {icon}
+      {children}
+    </TabsTrigger>
   );
 }
 
