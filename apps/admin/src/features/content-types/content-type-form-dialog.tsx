@@ -5,7 +5,6 @@ import { toApiId } from "@/lib/slug";
 import { z } from "zod";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -199,19 +198,29 @@ export function ContentTypeFormDialog({
             control={form.control}
             name="isSingleton"
             render={({ field }) => (
-              <div className="narah-muted-surface flex items-start gap-3 rounded-lg p-4">
-                <Checkbox
-                  id="content-type-singleton"
-                  checked={field.value}
-                  onCheckedChange={(checked) => field.onChange(checked === true)}
-                  className="mt-0.5 border-[var(--narah-border-strong)]"
-                />
-                <div className="space-y-1">
-                  <Label htmlFor="content-type-singleton" className="text-xs font-medium">Singleton type</Label>
-                  <p className="text-xs leading-6 text-muted-foreground">
-                    Use singleton mode when this schema should only have one
-                    entry, such as a homepage or site settings document.
-                  </p>
+              <div className="space-y-2 rounded-xl border border-border/80 bg-background/60 p-4">
+                <Label className="text-sm font-medium">
+                  How many entries?
+                </Label>
+                <p className="text-[0.7rem] text-muted-foreground">
+                  Pick how many entries this schema can have. Independent of
+                  whether individual fields hold multiple values.
+                </p>
+                <div className="grid gap-2 md:grid-cols-2">
+                  <ModeCard
+                    selected={field.value === true}
+                    onClick={() => field.onChange(true)}
+                    title="Singleton"
+                    description="Exactly one entry exists for this site."
+                    example="Homepage · About page · Site settings"
+                  />
+                  <ModeCard
+                    selected={field.value === false}
+                    onClick={() => field.onChange(false)}
+                    title="Collection"
+                    description="Many entries share the same structure."
+                    example="Articles · Products · Team members"
+                  />
                 </div>
               </div>
             )}
@@ -246,5 +255,48 @@ export function ContentTypeFormDialog({
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function ModeCard({
+  selected,
+  onClick,
+  title,
+  description,
+  example,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  title: string;
+  description: string;
+  example: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={
+        selected
+          ? "rounded-lg border border-(--narah-accent)/40 bg-(--narah-accent)/5 p-3 text-left transition-colors"
+          : "rounded-lg border border-border/60 bg-card p-3 text-left transition-colors hover:border-foreground/30"
+      }
+    >
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm font-medium">{title}</p>
+        <span
+          className={
+            selected
+              ? "size-3 rounded-full border-2 border-(--narah-accent) bg-(--narah-accent)"
+              : "size-3 rounded-full border-2 border-border bg-transparent"
+          }
+        />
+      </div>
+      <p className="mt-1 text-[0.7rem] leading-4 text-muted-foreground">
+        {description}
+      </p>
+      <p className="mt-1.5 font-mono text-[0.6rem] text-muted-foreground/80">
+        e.g. {example}
+      </p>
+    </button>
   );
 }

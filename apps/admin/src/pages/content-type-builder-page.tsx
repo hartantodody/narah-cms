@@ -45,9 +45,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/features/auth/auth-provider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  ContentFieldFormDialog,
-} from "@/features/content-types/content-field-form-dialog";
+import { AddToSchemaChooserDialog } from "@/features/content-types/add-to-schema-chooser-dialog";
+import { ContentFieldFormDialog } from "@/features/content-types/content-field-form-dialog";
+import { ContentGroupFormDialog } from "@/features/content-types/content-group-form-dialog";
 import { ContentTypeFormDialog } from "@/features/content-types/content-type-form-dialog";
 import {
   deleteContentField,
@@ -85,6 +85,8 @@ export function ContentTypeBuilderPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isContentTypeDialogOpen, setIsContentTypeDialogOpen] = useState(false);
   const [isFieldDialogOpen, setIsFieldDialogOpen] = useState(false);
+  const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);
+  const [isChooserOpen, setIsChooserOpen] = useState(false);
   const [editingField, setEditingField] = useState<ContentField | null>(null);
   const [deletingField, setDeletingField] = useState<ContentField | null>(null);
   const [isDeletingField, setIsDeletingField] = useState(false);
@@ -398,7 +400,7 @@ export function ContentTypeBuilderPage() {
                 className="rounded-2xl bg-primary px-5 hover:bg-primary/90"
                 onClick={() => {
                   setEditingField(null);
-                  setIsFieldDialogOpen(true);
+                  setIsChooserOpen(true);
                 }}
               >
                 <Plus className="size-4" />
@@ -564,7 +566,10 @@ export function ContentTypeBuilderPage() {
                   {canManage ? (
                     <Button
                       className="rounded-2xl bg-primary px-5 hover:bg-primary/90"
-                      onClick={() => setIsFieldDialogOpen(true)}
+                      onClick={() => {
+                        setEditingField(null);
+                        setIsChooserOpen(true);
+                      }}
                     >
                       <Plus className="size-4" />
                       {t("schema.builder.fields.addField")}
@@ -585,7 +590,11 @@ export function ContentTypeBuilderPage() {
                       onMoveDown={() => void handleMoveField(field.id, 1)}
                       onEdit={() => {
                         setEditingField(field);
-                        setIsFieldDialogOpen(true);
+                        if (field.type === "GROUP") {
+                          setIsGroupDialogOpen(true);
+                        } else {
+                          setIsFieldDialogOpen(true);
+                        }
                       }}
                       onDelete={() => setDeletingField(field)}
                     />
@@ -619,6 +628,20 @@ export function ContentTypeBuilderPage() {
         }}
       />
 
+      <AddToSchemaChooserDialog
+        open={isChooserOpen}
+        onOpenChange={setIsChooserOpen}
+        onChoose={(choice) => {
+          setIsChooserOpen(false);
+          setEditingField(null);
+          if (choice === "field") {
+            setIsFieldDialogOpen(true);
+          } else {
+            setIsGroupDialogOpen(true);
+          }
+        }}
+      />
+
       <ContentFieldFormDialog
         open={isFieldDialogOpen}
         onOpenChange={(open) => {
@@ -631,6 +654,23 @@ export function ContentTypeBuilderPage() {
         siteId={siteId}
         contentTypeId={contentTypeId}
         field={editingField}
+        onSuccess={async () => {
+          await refreshBuilderData();
+          setEditingField(null);
+        }}
+      />
+
+      <ContentGroupFormDialog
+        open={isGroupDialogOpen}
+        onOpenChange={(open) => {
+          setIsGroupDialogOpen(open);
+          if (!open) {
+            setEditingField(null);
+          }
+        }}
+        siteId={siteId}
+        contentTypeId={contentTypeId}
+        field={editingField?.type === "GROUP" ? editingField : null}
         onSuccess={async () => {
           await refreshBuilderData();
           setEditingField(null);

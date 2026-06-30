@@ -429,6 +429,57 @@
           "delete": "Delete"
         }
       }
+    },
+    "chooser": {
+      "title": "Add to schema",
+      "description": "Pick what to add. Fields hold values; groups bundle several fields together so editors can reuse the same shape.",
+      "field": {
+        "title": "Field",
+        "tagline": "One value (or list of values) of a simple type — text, number, image, date, etc.",
+        "example": "title · published_at · cover_image"
+      },
+      "group": {
+        "title": "Group",
+        "tagline": "Bundle of fields used together, optionally repeated as a list. Galleries, sections, FAQs.",
+        "example": "gallery · hero_section · faq_item"
+      }
+    },
+    "group": {
+      "createTitle": "Add group",
+      "editTitle": "Edit group",
+      "description": "Define a bundle of fields used together. Each item in a repeatable group is one record holding these fields.",
+      "labelLabel": "Label",
+      "apiIdLabel": "API ID",
+      "apiIdHint": "Auto-derived from label. snake_case, letters/numbers/_.",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Optional note for editors",
+      "modeLabel": "How is this used?",
+      "mode": {
+        "singleTitle": "Single group",
+        "singleDescription": "One instance per entry.",
+        "singleExample": "SEO meta object",
+        "repeatableTitle": "Repeatable list",
+        "repeatableDescription": "Many items per entry.",
+        "repeatableExample": "gallery, sections, FAQ"
+      },
+      "children": {
+        "label": "Child fields",
+        "hint": "Up to {{max}} fields. Each item carries these.",
+        "addCta": "Add child",
+        "empty": "No child fields yet. Add at least one.",
+        "row": {
+          "labelLabel": "Label",
+          "apiIdLabel": "API ID",
+          "typeLabel": "Type",
+          "required": "Required",
+          "multipleValues": "Multiple values",
+          "optionsLabel": "Options",
+          "optionsHint": "One option per line. Values auto-derived.",
+          "remove": "Remove child field"
+        }
+      },
+      "saveCta": "Save group",
+      "createCta": "Create group"
     }
   }
 }

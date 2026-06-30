@@ -429,6 +429,57 @@
           "delete": "Hapus"
         }
       }
+    },
+    "chooser": {
+      "title": "Tambah ke skema",
+      "description": "Pilih yang mau ditambahkan. Field menyimpan nilai; group membundel beberapa field jadi satu agar editor bisa pakai struktur yang sama berulang.",
+      "field": {
+        "title": "Field",
+        "tagline": "Satu nilai (atau list nilai) dengan tipe sederhana — teks, angka, gambar, tanggal, dll.",
+        "example": "title · published_at · cover_image"
+      },
+      "group": {
+        "title": "Group",
+        "tagline": "Bundle field yang dipakai bareng, opsional sebagai list. Galeri, section, FAQ.",
+        "example": "gallery · hero_section · faq_item"
+      }
+    },
+    "group": {
+      "createTitle": "Tambah group",
+      "editTitle": "Ubah group",
+      "description": "Definisikan bundle field yang dipakai bareng. Tiap item di repeatable group adalah satu record yang berisi field-field ini.",
+      "labelLabel": "Label",
+      "apiIdLabel": "API ID",
+      "apiIdHint": "Auto-derive dari label. snake_case, huruf/angka/_.",
+      "descriptionLabel": "Deskripsi",
+      "descriptionPlaceholder": "Catatan opsional untuk editor",
+      "modeLabel": "Dipakai bagaimana?",
+      "mode": {
+        "singleTitle": "Single group",
+        "singleDescription": "Satu instance per entry.",
+        "singleExample": "objek SEO meta",
+        "repeatableTitle": "Repeatable list",
+        "repeatableDescription": "Banyak item per entry.",
+        "repeatableExample": "galeri, section, FAQ"
+      },
+      "children": {
+        "label": "Field anak",
+        "hint": "Maksimal {{max}} field. Tiap item menyimpan field-field ini.",
+        "addCta": "Tambah anak",
+        "empty": "Belum ada field anak. Tambah minimal satu.",
+        "row": {
+          "labelLabel": "Label",
+          "apiIdLabel": "API ID",
+          "typeLabel": "Tipe",
+          "required": "Wajib",
+          "multipleValues": "Multiple value",
+          "optionsLabel": "Opsi",
+          "optionsHint": "Satu opsi per baris. Value auto-derive.",
+          "remove": "Hapus field anak"
+        }
+      },
+      "saveCta": "Simpan group",
+      "createCta": "Buat group"
     }
   }
 }
