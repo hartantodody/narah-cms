@@ -5,6 +5,7 @@ import { recordAudit } from '../audit/audit.service'
 import {
   createContentFieldSchema,
   createContentTypeSchema,
+  fieldImpactAnalysisSchema,
   listContentTypesQuerySchema,
   replaceContentTypeSchema,
   reorderContentFieldsSchema,
@@ -15,6 +16,7 @@ import {
   updateContentTypeSchema
 } from './content-types.schemas'
 import {
+  analyzeContentFieldChangeForUser,
   createContentFieldForUser,
   createContentTypeForUser,
   deleteContentFieldForUser,
@@ -196,6 +198,25 @@ export const updateContentField: RequestHandler = async (req, res, next) => {
     })
 
     sendOk(res, result, 'Content field updated')
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const analyzeContentFieldChange: RequestHandler = async (req, res, next) => {
+  try {
+    const user = requireUserOrThrow(req.user)
+    const params = parseOrThrow(contentFieldParamsSchema, req.params, 'Invalid route parameters')
+    const body = parseOrThrow(fieldImpactAnalysisSchema, req.body, 'Invalid request body')
+
+    const analysis = await analyzeContentFieldChangeForUser({
+      user,
+      siteId: params.siteId,
+      contentTypeId: params.contentTypeId,
+      fieldId: params.fieldId,
+      proposed: body
+    })
+    sendOk(res, { analysis })
   } catch (error) {
     next(error)
   }

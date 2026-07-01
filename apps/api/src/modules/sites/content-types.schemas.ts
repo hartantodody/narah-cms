@@ -294,6 +294,21 @@ export const updateContentFieldSchema = z.object({
   defaultValue: fieldDefaultValueSchema
 })
 
+/**
+ * Body schema for the impact-analysis endpoint:
+ *   POST /sites/:siteId/content-types/:contentTypeId/fields/:fieldId/impact-analysis
+ * The admin form posts the change it's about to commit; the API replies
+ * with a count + sample so the user can confirm or back out.
+ */
+export const fieldImpactAnalysisSchema = z.object({
+  apiId: optionalTrimmedString,
+  type: z.nativeEnum(ContentFieldType).optional(),
+  required: z.boolean().optional(),
+  isList: z.boolean().optional(),
+  deleted: z.boolean().optional()
+})
+export type FieldImpactAnalysisInput = z.infer<typeof fieldImpactAnalysisSchema>
+
 export const reorderContentFieldsSchema = z.object({
   fieldIds: z
     .array(z.string().uuid('Each field id must be a valid uuid.'))

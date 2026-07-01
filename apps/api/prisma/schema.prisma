@@ -184,6 +184,11 @@ model ContentField {
   defaultValue  Json?            @map("default_value")
   createdAt     DateTime         @default(now()) @map("created_at")
   updatedAt     DateTime         @updatedAt @map("updated_at")
+  // When non-null, the field is soft-deleted: hidden from entry forms
+  // but its data stays in JSON so it can be restored. Populated by the
+  // future soft-delete flow; the column is scaffolded now so we don't
+  // need another migration when that lands.
+  deprecatedAt  DateTime?        @map("deprecated_at")
   contentType   ContentType      @relation(fields: [contentTypeId], references: [id], onDelete: Cascade)
 
   @@unique([contentTypeId, apiId])
@@ -241,6 +246,9 @@ model ContentEntryRevision {
   data      Json
   authorId  String             @map("author_id") @db.Uuid
   createdAt DateTime           @default(now()) @map("created_at")
+  // Free-form tag for non-user snapshots (e.g. 'pre-schema-change:apiId'
+  // when the schema is about to mutate). Null for regular edits.
+  reason    String?
   entry     ContentEntry       @relation(fields: [entryId], references: [id], onDelete: Cascade)
   author    User               @relation("ContentEntryRevisionAuthor", fields: [authorId], references: [id], onDelete: Restrict)
 

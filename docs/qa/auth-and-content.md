@@ -280,7 +280,16 @@ All steps assume the QA site from §6.1.
 
 | Step | Expected |
 |---|---|
-| Delete field; entries with that field's data | Field disappears from schema; old entry data may retain orphan key (verify behaviour) |
+| Delete field; entries with that field's data | Impact preview shows count of entries with values as "at risk". Snapshot lands automatically. UI stops rendering the value. Value survives inside the snapshot revision. |
+
+### 8.5 Schema-change safety (see `docs/setup/schema-changes.md`)
+
+| Step | Expected |
+|---|---|
+| Rename a field's apiId (e.g. `title` → `headline`) | ✅ Every entry's JSON gets rewritten in-place. Pre-schema-change snapshot per entry. Revisions panel shows the tagged snapshot. |
+| Change a field's type TEXT → NUMBER | Impact modal opens. If any string isn't parseable, listed as at-risk. On confirm, snapshot lands + change applies. |
+| Change a field's type TEXT → MEDIA | 🚫 API returns `400 SCHEMA_CHANGE_NOT_COERCIBLE`. Modal shows blocking reason. Save button disabled. |
+| Tighten `required` false → true | Impact modal flags entries whose current value is null as at-risk (they can't publish until edited). |
 
 ---
 

@@ -49,11 +49,14 @@ import { AddToSchemaChooserDialog } from "@/features/content-types/add-to-schema
 import { ContentFieldFormDialog } from "@/features/content-types/content-field-form-dialog";
 import { ContentGroupFormDialog } from "@/features/content-types/content-group-form-dialog";
 import { ContentTypeFormDialog } from "@/features/content-types/content-type-form-dialog";
+import { SchemaChangeImpactDialog } from "@/features/content-types/schema-change-impact-dialog";
 import {
+  analyzeContentFieldChange,
   deleteContentField,
   deleteContentType,
   getContentType,
   reorderContentFields,
+  type FieldImpactAnalysis,
 } from "@/features/content-types/content-type.api";
 import { DynamicFieldInput } from "@/features/content-entries/dynamic-field-input";
 import { cn } from "@/lib/utils";
@@ -91,6 +94,10 @@ export function ContentTypeBuilderPage() {
   const [isChooserOpen, setIsChooserOpen] = useState(false);
   const [editingField, setEditingField] = useState<ContentField | null>(null);
   const [deletingField, setDeletingField] = useState<ContentField | null>(null);
+  const [deleteImpact, setDeleteImpact] =
+    useState<FieldImpactAnalysis | null>(null);
+  const [isLoadingImpact, setIsLoadingImpact] = useState(false);
+  const [impactError, setImpactError] = useState<string | null>(null);
   const [isDeletingField, setIsDeletingField] = useState(false);
   const [isDeletingContentType, setIsDeletingContentType] = useState(false);
   const [isDeleteContentTypeDialogOpen, setIsDeleteContentTypeDialogOpen] =
@@ -183,6 +190,42 @@ export function ContentTypeBuilderPage() {
       isActive = false;
     };
   }, [contentTypeId, siteId]);
+
+  // Kick off impact analysis whenever a deletion is queued. If the API
+  // responds with even one "at risk" entry, the confirm dialog surfaces
+  // it and the user can back out; otherwise it's a normal confirm.
+  useEffect(() => {
+    if (!siteId || !contentTypeId || !deletingField) {
+      setDeleteImpact(null);
+      setImpactError(null);
+      return;
+    }
+    let cancelled = false;
+    setIsLoadingImpact(true);
+    setImpactError(null);
+    analyzeContentFieldChange(siteId, contentTypeId, deletingField.id, {
+      deleted: true,
+    })
+      .then((res) => {
+        if (!cancelled) setDeleteImpact(res.analysis);
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setImpactError(
+            getApiErrorMessage(
+              error,
+              "Couldn't check how many entries this affects.",
+            ),
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingImpact(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [contentTypeId, deletingField, siteId]);
 
   const handleDeleteField = async () => {
     if (!siteId || !contentTypeId || !deletingField) {
@@ -683,37 +726,23 @@ export function ContentTypeBuilderPage() {
         }}
       />
 
-      <AlertDialog
+      <SchemaChangeImpactDialog
         open={Boolean(deletingField)}
         onOpenChange={(open) => {
-          if (!open) {
-            setDeletingField(null);
-          }
+          if (!open) setDeletingField(null);
         }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this field?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {deletingField
-                ? `Delete "${deletingField.label}" from this content type.`
-                : "Delete this field from the content type."}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeletingField}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              disabled={isDeletingField}
-              onClick={handleDeleteField}
-            >
-              {isDeletingField ? "Deleting..." : "Delete field"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        loading={isLoadingImpact}
+        analysis={deleteImpact}
+        errorMessage={impactError}
+        onConfirm={handleDeleteField}
+        actionLabel="Delete field"
+        submitting={isDeletingField}
+        changeSummary={
+          deletingField
+            ? `Delete "${deletingField.label}" (${deletingField.apiId}) from this content type.`
+            : "Delete this field."
+        }
+      />
 
       <AlertDialog
         open={isDeleteContentTypeDialogOpen}

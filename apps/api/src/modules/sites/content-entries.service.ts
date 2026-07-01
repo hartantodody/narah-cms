@@ -103,7 +103,8 @@ const serializeRevisionDetail = (record: RevisionDetailRecord) => ({
 const snapshotEntryRevision = async (
   tx: Prisma.TransactionClient,
   entry: { id: string; version: number; status: ContentEntryStatus; data: Prisma.JsonValue },
-  authorId: string
+  authorId: string,
+  reason: string | null = null
 ) => {
   await tx.contentEntryRevision.create({
     data: {
@@ -111,7 +112,8 @@ const snapshotEntryRevision = async (
       version: entry.version,
       status: entry.status,
       data: entry.data as Prisma.InputJsonValue,
-      authorId
+      authorId,
+      reason
     }
   })
 

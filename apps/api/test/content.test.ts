@@ -634,3 +634,202 @@ describe('GROUP field — entry data', () => {
     expect(patched.body.data?.entry.version).toBe(2)
   })
 })
+
+/* ────────────────────────────────────────────────────────────── */
+/* Schema-change safety: pre-flight snapshots, auto-migrate,       */
+/* type coercion guard, impact analysis                            */
+/* ────────────────────────────────────────────────────────────── */
+
+import { prisma } from '../src/lib/prisma'
+
+const seedArticleWithEntries = async () => {
+  const u = await createAuthedUser()
+  const site = await createSite(u.accessToken)
+  const ct = await createContentType(u.accessToken, site.id, { name: 'Article' })
+  const title = await createField(u.accessToken, site.id, ct.id, {
+    label: 'Title',
+    type: 'TEXT',
+    required: true
+  })
+  await createField(u.accessToken, site.id, ct.id, {
+    label: 'Body',
+    type: 'TEXT'
+  })
+  // 3 entries with values
+  for (const v of ['hello', 'world', 'foo']) {
+    await api(`/sites/${site.id}/content-types/${ct.id}/entries`, {
+      method: 'POST',
+      token: u.accessToken,
+      body: { data: { title: v, body: `${v} body` } }
+    })
+  }
+  return { user: u, site, contentType: ct, titleFieldId: title.id }
+}
+
+describe('Schema-change safety — auto-migration on apiId rename', () => {
+  test('rename of a field apiId migrates all entry data + leaves a recoverable snapshot', async () => {
+    const { user, site, contentType, titleFieldId } =
+      await seedArticleWithEntries()
+
+    const renamed = await api(
+      `/sites/${site.id}/content-types/${contentType.id}/fields/${titleFieldId}`,
+      {
+        method: 'PATCH',
+        token: user.accessToken,
+        body: { apiId: 'headline' }
+      }
+    )
+    expect(renamed.status).toBe(200)
+
+    // Every entry now stores data under the new key and not the old one.
+    const entries = await prisma.contentEntry.findMany({
+      where: { contentTypeId: contentType.id }
+    })
+    expect(entries.length).toBe(3)
+    for (const entry of entries) {
+      const data = entry.data as Record<string, unknown>
+      expect('headline' in data).toBe(true)
+      expect('title' in data).toBe(false)
+      expect(typeof data.headline).toBe('string')
+    }
+
+    // Every entry now carries a revision tagged with pre-schema-change.
+    // The existing v=1 revision that was seeded at entry creation gets
+    // re-tagged rather than a duplicate row being inserted.
+    const snapshots = await prisma.contentEntryRevision.findMany({
+      where: { reason: { contains: 'pre-schema-change' } }
+    })
+    expect(snapshots.length).toBe(3)
+  })
+})
+
+describe('Schema-change safety — type coercion guard', () => {
+  test('coercible type change (TEXT → NUMBER) is allowed', async () => {
+    const { user, site, contentType, titleFieldId } =
+      await seedArticleWithEntries()
+    const res = await api(
+      `/sites/${site.id}/content-types/${contentType.id}/fields/${titleFieldId}`,
+      {
+        method: 'PATCH',
+        token: user.accessToken,
+        body: { type: 'NUMBER' }
+      }
+    )
+    expect(res.status).toBe(200)
+  })
+
+  test('uncoercible type change (TEXT → MEDIA) is rejected with 400 SCHEMA_CHANGE_NOT_COERCIBLE', async () => {
+    const { user, site, contentType, titleFieldId } =
+      await seedArticleWithEntries()
+    const res = await api(
+      `/sites/${site.id}/content-types/${contentType.id}/fields/${titleFieldId}`,
+      {
+        method: 'PATCH',
+        token: user.accessToken,
+        body: { type: 'MEDIA' }
+      }
+    )
+    expect(res.status).toBe(400)
+    expect(res.body.code).toBe('SCHEMA_CHANGE_NOT_COERCIBLE')
+  })
+})
+
+type ImpactAnalysisResponse = {
+  analysis: {
+    totalEntries: number
+    entriesWithValue: number
+    entriesAtRisk: number
+    sample: Array<{ id: string; willLoseData: boolean }>
+    blockingReason: string | null
+  }
+}
+
+describe('Schema-change safety — impact analysis', () => {
+  test('rename is non-destructive: entriesAtRisk == 0', async () => {
+    const { user, site, contentType, titleFieldId } =
+      await seedArticleWithEntries()
+    const res = await api<ImpactAnalysisResponse>(
+      `/sites/${site.id}/content-types/${contentType.id}/fields/${titleFieldId}/impact-analysis`,
+      {
+        method: 'POST',
+        token: user.accessToken,
+        body: { apiId: 'headline' }
+      }
+    )
+    expect(res.status).toBe(200)
+    expect(res.body.data?.analysis.totalEntries).toBe(3)
+    expect(res.body.data?.analysis.entriesWithValue).toBe(3)
+    expect(res.body.data?.analysis.entriesAtRisk).toBe(0)
+    expect(res.body.data?.analysis.blockingReason).toBeNull()
+  })
+
+  test('delete: all entries with values are at-risk', async () => {
+    const { user, site, contentType, titleFieldId } =
+      await seedArticleWithEntries()
+    const res = await api<ImpactAnalysisResponse>(
+      `/sites/${site.id}/content-types/${contentType.id}/fields/${titleFieldId}/impact-analysis`,
+      {
+        method: 'POST',
+        token: user.accessToken,
+        body: { deleted: true }
+      }
+    )
+    expect(res.status).toBe(200)
+    expect(res.body.data?.analysis.entriesAtRisk).toBe(3)
+    expect(
+      res.body.data?.analysis.sample.every((s) => s.willLoseData),
+    ).toBe(true)
+  })
+
+  test('uncoercible type swap surfaces blockingReason', async () => {
+    const { user, site, contentType, titleFieldId } =
+      await seedArticleWithEntries()
+    const res = await api<ImpactAnalysisResponse>(
+      `/sites/${site.id}/content-types/${contentType.id}/fields/${titleFieldId}/impact-analysis`,
+      {
+        method: 'POST',
+        token: user.accessToken,
+        body: { type: 'MEDIA' }
+      }
+    )
+    expect(res.status).toBe(200)
+    expect(res.body.data?.analysis.blockingReason).not.toBeNull()
+  })
+
+  test('tightening required flags entries without values as at-risk', async () => {
+    const u = await createAuthedUser()
+    const site = await createSite(u.accessToken)
+    const ct = await createContentType(u.accessToken, site.id)
+    await createField(u.accessToken, site.id, ct.id, {
+      label: 'Title',
+      type: 'TEXT',
+      required: true
+    })
+    const body = await createField(u.accessToken, site.id, ct.id, {
+      label: 'Body',
+      type: 'TEXT'
+    })
+    // Create two entries: one with body, one without.
+    await api(`/sites/${site.id}/content-types/${ct.id}/entries`, {
+      method: 'POST',
+      token: u.accessToken,
+      body: { data: { title: 'A', body: 'has body' } }
+    })
+    await api(`/sites/${site.id}/content-types/${ct.id}/entries`, {
+      method: 'POST',
+      token: u.accessToken,
+      body: { data: { title: 'B' } } // body omitted → null
+    })
+
+    const res = await api<ImpactAnalysisResponse>(
+      `/sites/${site.id}/content-types/${ct.id}/fields/${body.id}/impact-analysis`,
+      {
+        method: 'POST',
+        token: u.accessToken,
+        body: { required: true }
+      }
+    )
+    expect(res.status).toBe(200)
+    expect(res.body.data?.analysis.entriesAtRisk).toBe(1)
+  })
+})

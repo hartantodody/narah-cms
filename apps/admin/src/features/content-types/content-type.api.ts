@@ -1,6 +1,7 @@
 import { apiFetch } from "@/lib/api";
 import type {
   ContentFieldMutationResponse,
+  ContentFieldType,
   ContentTypeDetailResponse,
   ContentTypeListResponse,
   CreateContentFieldInput,
@@ -104,6 +105,47 @@ export const deleteContentField = (
     `/sites/${siteId}/content-types/${contentTypeId}/fields/${fieldId}`,
     {
       method: "DELETE",
+    },
+  );
+
+export type FieldImpactProposal = {
+  apiId?: string;
+  type?: ContentFieldType;
+  required?: boolean;
+  isList?: boolean;
+  deleted?: boolean;
+};
+
+export type FieldImpactAnalysis = {
+  totalEntries: number;
+  entriesWithValue: number;
+  entriesAtRisk: number;
+  sample: Array<{
+    id: string;
+    slug: string | null;
+    status: string;
+    hasValue: boolean;
+    willLoseData: boolean;
+  }>;
+  blockingReason: string | null;
+};
+
+/**
+ * Ask the API what damage a proposed schema change would do BEFORE we
+ * commit it. The admin renders a confirm modal off the response so the
+ * user can back out if too many entries would lose data.
+ */
+export const analyzeContentFieldChange = (
+  siteId: string,
+  contentTypeId: string,
+  fieldId: string,
+  proposal: FieldImpactProposal,
+) =>
+  apiFetch<{ analysis: FieldImpactAnalysis }>(
+    `/sites/${siteId}/content-types/${contentTypeId}/fields/${fieldId}/impact-analysis`,
+    {
+      method: "POST",
+      body: JSON.stringify(proposal),
     },
   );
 

@@ -17,6 +17,7 @@ import {
   deleteContentField,
   deleteContentType,
   getContentTypeById,
+  analyzeContentFieldChange,
   listContentTypes,
   reorderContentFields,
   updateContentField,
@@ -103,6 +104,10 @@ sitesRouter.patch(
 sitesRouter.patch(
   '/:siteId/content-types/:contentTypeId/fields/:fieldId',
   updateContentField
+)
+sitesRouter.post(
+  '/:siteId/content-types/:contentTypeId/fields/:fieldId/impact-analysis',
+  analyzeContentFieldChange
 )
 sitesRouter.delete(
   '/:siteId/content-types/:contentTypeId/fields/:fieldId',

@@ -16,6 +16,14 @@ import {
   getContentFieldConfigIssues,
   normalizeContentApiId
 } from './content-types.schemas'
+import {
+  analyzeFieldChange,
+  isTypeChangeCoercible,
+  renameGroupChildKeyInEntries,
+  snapshotEntriesForContentType,
+  type ImpactAnalysis,
+  type ProposedFieldChange
+} from './schema-change-safety'
 
 const contentFieldSelect = {
   id: true,
@@ -795,6 +803,30 @@ export const createContentFieldForUser = async ({
   }
 }
 
+/**
+ * Pull a flat list of children defs out of a GROUP field's config.children.
+ * Tolerant of missing keys — anything malformed is just skipped.
+ */
+const extractGroupChildrenFromConfig = (
+  config: unknown
+): Array<{ apiId: string; label: string; type: string }> => {
+  if (!config || typeof config !== 'object' || Array.isArray(config)) return []
+  const raw = (config as { children?: unknown }).children
+  if (!Array.isArray(raw)) return []
+  const out: Array<{ apiId: string; label: string; type: string }> = []
+  for (const child of raw) {
+    if (!child || typeof child !== 'object' || Array.isArray(child)) continue
+    const c = child as Record<string, unknown>
+    if (typeof c.apiId !== 'string' || typeof c.type !== 'string') continue
+    out.push({
+      apiId: c.apiId,
+      label: typeof c.label === 'string' ? c.label : c.apiId,
+      type: c.type
+    })
+  }
+  return out
+}
+
 export const updateContentFieldForUser = async ({
   user,
   siteId,
@@ -890,9 +922,71 @@ export const updateContentFieldForUser = async ({
     input.isList !== undefined && input.isList !== currentField.isList
   const apiIdChanging =
     data.apiId !== undefined && data.apiId !== currentField.apiId
+  const typeChanging =
+    input.type !== undefined && input.type !== currentField.type
+  const requiredTightening =
+    input.required === true && currentField.required === false
+
+  // Type changes that can't be safely coerced are hard-rejected here.
+  // The admin sees this as a 400 before any snapshot or DB write.
+  if (typeChanging && !isTypeChangeCoercible(currentField.type, input.type!)) {
+    throw new HttpError({
+      message: `Type change from ${currentField.type} to ${input.type} is not safely coercible. Delete this field and create a new one (or export-import data manually) to avoid silent data loss.`,
+      statusCode: 400,
+      code: 'SCHEMA_CHANGE_NOT_COERCIBLE'
+    })
+  }
+
+  // Detect renamed children inside a GROUP. Match old↔new by position
+  // (UI emits children in order). A pair where label/type stayed but
+  // apiId differs is treated as a rename and triggers per-child data
+  // migration plus a snapshot.
+  const groupChildRenames: Array<{ oldApiId: string; newApiId: string }> = []
+  if (currentField.type === 'GROUP' && input.config) {
+    const oldChildren = extractGroupChildrenFromConfig(currentField.config)
+    const newChildren = extractGroupChildrenFromConfig(
+      input.config as Record<string, unknown> | null | undefined
+    )
+    const len = Math.min(oldChildren.length, newChildren.length)
+    for (let i = 0; i < len; i++) {
+      const o = oldChildren[i]
+      const n = newChildren[i]
+      if (
+        o.apiId !== n.apiId &&
+        o.type === n.type &&
+        o.label === n.label
+      ) {
+        groupChildRenames.push({ oldApiId: o.apiId, newApiId: n.apiId })
+      }
+    }
+  }
+
+  // Any change that touches the data shape gets a pre-flight snapshot so
+  // admins can restore from /revisions if a migration goes sideways.
+  const isRiskyChange =
+    isListChanging ||
+    apiIdChanging ||
+    typeChanging ||
+    requiredTightening ||
+    groupChildRenames.length > 0
 
   try {
     const updatedField = await prisma.$transaction(async (tx) => {
+      if (isRiskyChange) {
+        await snapshotEntriesForContentType(tx, {
+          contentTypeId,
+          authorId: user.id,
+          reason: `pre-schema-change:field:${currentField.apiId}`
+        })
+      }
+      for (const { oldApiId, newApiId } of groupChildRenames) {
+        await renameGroupChildKeyInEntries(tx, {
+          contentTypeId,
+          groupApiId: currentField.apiId,
+          oldChildApiId: oldApiId,
+          newChildApiId: newApiId
+        })
+      }
       const field =
         Object.keys(data).length === 0
           ? currentField
@@ -992,6 +1086,35 @@ export const updateContentFieldForUser = async ({
   }
 }
 
+export const analyzeContentFieldChangeForUser = async ({
+  user,
+  siteId,
+  contentTypeId,
+  fieldId,
+  proposed
+}: {
+  user: AuthenticatedRequestUser
+  siteId: string
+  contentTypeId: string
+  fieldId: string
+  proposed: ProposedFieldChange
+}): Promise<ImpactAnalysis> => {
+  await ensureSchemaManageAccess(user, siteId)
+  await getContentTypeMinimalRecord({ siteId, contentTypeId })
+  const field = await getContentFieldRecord({ siteId, contentTypeId, fieldId })
+
+  return analyzeFieldChange({
+    contentTypeId,
+    field: {
+      apiId: field.apiId,
+      type: field.type,
+      required: field.required,
+      isList: field.isList
+    },
+    proposed
+  })
+}
+
 export const deleteContentFieldForUser = async ({
   user,
   siteId,
@@ -1008,13 +1131,21 @@ export const deleteContentFieldForUser = async ({
     siteId,
     contentTypeId
   })
-  await getContentFieldRecord({
+  const fieldRecord = await getContentFieldRecord({
     siteId,
     contentTypeId,
     fieldId
   })
 
   await prisma.$transaction(async (tx) => {
+    // Pre-flight snapshot — delete is destructive, JSON keeps the data
+    // under the old apiId but the field gone means no UI ever sees it.
+    // The snapshot lets admins recover full entry state if needed.
+    await snapshotEntriesForContentType(tx, {
+      contentTypeId,
+      authorId: user.id,
+      reason: `pre-schema-change:field-delete:${fieldRecord.apiId}`
+    })
     await tx.contentField.delete({
       where: {
         id: fieldId
